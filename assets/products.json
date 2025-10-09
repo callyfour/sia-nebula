@@ -1,0 +1,74 @@
+[
+  {
+    "id": 1,
+    "name": "Recaro RSS",
+    "description": "High-quality brake pads for safety.",
+    "price": 1500,
+    "brand": "Recaro",
+    "image": "https://res.cloudinary.com/dgoaerd03/image/upload/v1757209293/recaro_rss_o9rltu.png"
+  },
+  {
+    "id": 2,
+    "name": "Recaro Kids Child Car Seat Monza Nova IS SeatFix Racing Edition",
+    "description": "Durable oil filter for smooth engine performance.",
+    "price": 700,
+    "brand": "Recaro",
+    "image": "https://res.cloudinary.com/dgoaerd03/image/upload/v1757252009/Recaro_Kids_Child_Car_Seat_Monza_Nova_IS_SeatFix_Racing_Edition_oe3l3k.png"
+  },
+  {
+    "id": 3,
+    "name": "Air Filter",
+    "description": "Keeps air intake clean and efficient.",
+    "price": 800,
+    "brand": "Honda",
+    "image": "https://via.placeholder.com/400x300?text=Air+Filter"
+  },
+  {
+    "id": 4,
+    "name": "Spark Plug",
+    "description": "Reliable spark plugs for consistent ignition.",
+    "price": 400,
+    "brand": "Honda",
+    "image": "https://via.placeholder.com/400x300?text=Spark+Plug"
+  },
+  {
+    "id": 5,
+    "name": "Battery",
+    "description": "Long-lasting battery for all weather conditions.",
+    "price": 3000,
+    "brand": "Nissan",
+    "image": "https://via.placeholder.com/400x300?text=Battery"
+  },
+  {
+    "id": 6,
+    "name": "Brake Disc",
+    "description": "Premium brake disc for optimal stopping power.",
+    "price": 2200,
+    "brand": "Nissan",
+    "image": "https://via.placeholder.com/400x300?text=Brake+Disc"
+  },
+  {
+    "id": 7,
+    "name": "Clutch Kit",
+    "description": "Complete clutch kit for smooth gear changes.",
+    "price": 4500,
+    "brand": "Toyota",
+    "image": "https://via.placeholder.com/400x300?text=Clutch+Kit"
+  },
+  {
+    "id": 8,
+    "name": "Timing Belt",
+    "description": "Durable timing belt to prevent engine damage.",
+    "price": 1200,
+    "brand": "Honda",
+    "image": "https://via.placeholder.com/400x300?text=Timing+Belt"
+  },
+  {
+    "id": 9,
+    "name": "Radiator",
+    "description": "High-efficiency radiator to prevent overheating.",
+    "price": 3500,
+    "brand": "Nissan",
+    "image": "https://via.placeholder.com/400x300?text=Radiator"
+  }
+]

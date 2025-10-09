@@ -1,0 +1,306 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
+
+/* CSS Variables for easy theming */
+:root {
+  --bg-primary: #000;
+  --bg-secondary: #111;
+  --bg-tertiary: #1a1a1a;
+  --text-primary: #fff;
+  --text-secondary: #ccc;
+  --text-muted: #888;
+  --border-color: #333;
+  --accent-red: #ff4d4d;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+  --shadow-hover: 0 15px 40px rgba(0, 0, 0, 0.7);
+  --border-radius: 16px;
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Poppins", sans-serif;
+}
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  font-size: clamp(0.95rem, 2vw, 1rem);
+  overflow-x: hidden;
+}
+
+.order-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: 140px 20px 60px 20px;
+  min-height: 100vh;
+}
+
+.order-container {
+  max-width: 1000px;
+  width: 100%;
+  background: linear-gradient(145deg, var(--bg-secondary), var(--bg-tertiary));
+  border-radius: var(--border-radius);
+  padding: 35px;
+  box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+
+.order-container::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--accent-red),
+    transparent
+  );
+}
+
+.order-container h2 {
+  margin-bottom: 25px;
+  font-weight: 600;
+  font-size: clamp(1.6rem, 3vw, 2rem);
+  letter-spacing: -0.02em;
+  position: relative;
+}
+
+.order-container h2::after {
+  content: "";
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  width: 50px;
+  height: 3px;
+  background: var(--accent-red);
+  border-radius: 2px;
+}
+
+.order-info {
+  margin-bottom: 30px;
+  padding: 20px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: rgba(26, 26, 26, 0.8);
+  backdrop-filter: blur(10px);
+  transition: var(--transition);
+}
+
+.order-info:hover {
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  border-color: var(--accent-red);
+}
+
+.order-info p {
+  margin: 8px 0;
+  font-size: clamp(0.9rem, 1.5vw, 0.95rem);
+  color: var(--text-secondary);
+}
+
+.order-info strong {
+  color: var(--text-primary);
+}
+
+.items-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-top: 20px;
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.items-table th,
+.items-table td {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color);
+  text-align: left;
+  transition: var(--transition);
+}
+
+.items-table th {
+  color: var(--accent-red);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+  background: rgba(255, 77, 77, 0.1);
+}
+
+.items-table td {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.items-table tr:last-child td {
+  border-bottom: none;
+}
+
+.items-table tr:hover {
+  background: linear-gradient(
+    90deg,
+    var(--bg-tertiary),
+    rgba(255, 77, 77, 0.05)
+  );
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.order-total {
+  margin-top: 30px;
+  text-align: right;
+  font-size: clamp(1.2rem, 2.5vw, 1.4rem);
+  font-weight: 700;
+  color: var(--text-primary);
+  padding: 15px 0;
+  border-top: 2px solid var(--border-color);
+  letter-spacing: -0.01em;
+}
+
+.status {
+  font-weight: 600;
+  text-transform: capitalize;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  display: inline-block;
+  transition: var(--transition);
+}
+
+.status.paid {
+  color: #4caf50;
+  background: rgba(76, 175, 80, 0.2);
+}
+
+.status.pending {
+  color: #ff9800;
+  background: rgba(255, 152, 0, 0.2);
+}
+
+.status.shipped {
+  color: #2196f3;
+  background: rgba(33, 150, 243, 0.2);
+}
+
+.status.delivered {
+  color: #00e676;
+  background: rgba(0, 230, 118, 0.2);
+}
+
+.status.cancelled {
+  color: #f44336;
+  background: rgba(244, 67, 54, 0.2);
+}
+
+.status:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Responsive Enhancements */
+@media (max-width: 768px) {
+  .order-wrapper {
+    padding: 100px 15px 40px 15px;
+  }
+
+  .order-container {
+    padding: 25px 20px;
+    margin: 0 10px;
+  }
+
+  .items-table {
+    font-size: 0.85rem;
+  }
+
+  .items-table th,
+  .items-table td {
+    padding: 12px 15px;
+  }
+
+  .items-table thead {
+    display: none; /* Hide headers on small screens for a card-like feel */
+  }
+
+  .items-table tr {
+    display: block;
+    margin-bottom: 15px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    background: var(--bg-tertiary);
+  }
+
+  .items-table td {
+    display: block;
+    text-align: right;
+    padding: 10px 15px;
+    border: none;
+    position: relative;
+    padding-left: 50%;
+  }
+
+  .items-table td::before {
+    content: attr(data-label);
+    position: absolute;
+    left: 15px;
+    width: 45%;
+    font-weight: 600;
+    color: var(--accent-red);
+    text-align: left;
+  }
+
+  /* Add data-label to table cells in HTML if not already */
+}
+
+@media (max-width: 480px) {
+  .order-info {
+    padding: 15px;
+  }
+
+  .order-total {
+    font-size: 1.2rem;
+  }
+}
+
+.back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.95rem;
+  padding: 10px 16px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  transition: var(--transition);
+  margin-bottom: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.back-button:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--accent-red);
+  transform: translateX(-2px);
+}
+
+@media (max-width: 768px) {
+  .back-button {
+    margin: 0 0 20px 0;
+    justify-content: center;
+    width: 100%;
+  }
+}

@@ -1,0 +1,207 @@
+/* Navbar container */
+.navbar {
+  position: fixed; /* or sticky */
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 0.5rem 2rem;
+  background-color: black;
+}
+
+/* Logo */
+.nav-logo img {
+  max-width: 150px;
+  width: 20vw;
+  min-width: 90px;
+  height: auto;
+  object-fit: contain;
+  cursor: pointer;
+}
+
+/* Navigation menu */
+.nav-menu {
+  display: flex;
+  list-style: none;
+  gap: 3rem;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  margin: 0;
+  padding: 0;
+}
+
+.nav-menu li a {
+  color: #fff;
+  text-decoration: none;
+  position: relative;
+  padding: 0.25rem 0;
+  transition: color 0.2s;
+  font-size: 1rem;
+  white-space: nowrap;
+}
+
+.nav-menu li a:hover::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 0.125rem;
+  background: red;
+  border-radius: 0.125rem;
+}
+
+.nav-menu li a:hover {
+  color: #ff4444;
+}
+
+/* Right side (user + search) */
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-shrink: 0;
+}
+
+/* User menu container */
+.user-menu {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* User button (icon + name) */
+.svg-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  width: auto;
+  height: 42px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+  color: white;
+}
+
+.svg-btn svg {
+  width: 42px;
+  height: 42px;
+}
+
+.svg-btn .icon-wrapper {
+  position: absolute;
+  top: 50%;
+  left: 21px; /* center over polygon */
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.svg-btn .icon-wrapper i {
+  font-size: 18px;
+  color: white;
+}
+
+.user-name {
+  font-size: 0.9rem;
+  color: white;
+  white-space: nowrap;
+}
+
+/* Dropdown menu */
+.dropdown {
+  position: absolute;
+  top: 110%;
+  right: 0;
+  background: #1f1f1f;
+  border: 1px solid #333;
+  border-radius: 6px;
+  min-width: 140px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  z-index: 2000;
+}
+
+.dropdown-item {
+  padding: 0.5rem 1rem;
+  background: none;
+  border: none;
+  text-align: left;
+  color: white;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.2s, color 0.2s;
+}
+
+.dropdown-item:hover {
+  background: #ff4444;
+  color: white;
+}
+
+/* Search bar */
+.search-bar {
+  padding: 0.5rem 1rem;
+  border-radius: 25px;
+  border: 1px solid #333;
+  background-color: #1f1f1f;
+  color: white;
+  font-size: 0.9rem;
+  outline: none;
+  transition: all 0.3s ease;
+  max-width: 200px;
+}
+
+.search-bar::placeholder {
+  color: #aaa;
+}
+
+.search-bar:focus {
+  border-color: #ff4d4d;
+  background-color: #2a2a2a;
+}
+
+/* --- Responsive Adjustments --- */
+@media (max-width: 992px) {
+  .nav-menu {
+    gap: 1.5rem;
+  }
+  .search-bar {
+    max-width: 150px;
+  }
+  .user-name {
+    display: none; /* hide username on medium screens */
+  }
+}
+
+@media (max-width: 768px) {
+  .navbar {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 0.75rem 1rem;
+  }
+  .nav-menu {
+    width: 100%;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 0.5rem;
+  }
+  .navbar-right {
+    width: 100%;
+    justify-content: space-between;
+    margin-top: 0.5rem;
+  }
+  .search-bar {
+    flex: 1;
+    max-width: none;
+  }
+}
