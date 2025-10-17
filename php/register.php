@@ -1,12 +1,18 @@
 <?php
 session_start();
 require "db.php"; // PDO connection
+require "../vendor/autoload.php"; // PHPMailer (adjust path if needed)
+
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
 
 $error = "";
 $success = "";
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    $name = trim($_POST["name"]);
+    $first = trim($_POST["first_name"]);
+    $middle = trim($_POST["middle_name"]);
+    $last = trim($_POST["last_name"]);
     $email = trim($_POST["email"]);
     $password = trim($_POST["password"]);
     $confirm = trim($_POST["confirm_password"]);
@@ -25,71 +31,93 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             // Hash the password
             $hashed = password_hash($password, PASSWORD_DEFAULT);
 
-            // Insert new user
-            $stmt = $pdo->prepare("INSERT INTO users (name, email, password, role, created_at) VALUES (?, ?, ?, 'user', NOW())");
-            $stmt->execute([$name, $email, $hashed]);
+            // Generate a 6-digit verification code
+            $code = rand(100000, 999999);
 
-            // Store session
-            $_SESSION["user"] = [
-                "id" => $pdo->lastInsertId(),
-                "name" => $name,
-                "email" => $email
+            // Store temporarily in session before verification
+            $_SESSION["pending_user"] = [
+                "first_name" => $first,
+                "middle_name" => $middle,
+                "last_name" => $last,
+                "email" => $email,
+                "password" => $hashed,
+                "code" => $code
             ];
 
-            header("Location: index.php");
-            exit;
+            // Send verification email
+            $mail = new PHPMailer(true);
+            try {
+                $mail->isSMTP();
+                $mail->Host = 'smtp.gmail.com';
+                $mail->SMTPAuth = true;
+                $mail->Username = 'nebulaautoparts@gmail.com'; // Your Gmail
+                $mail->Password = 'ddmn pawh zyzm qidh';  // Use App Password (not your real one)
+                $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                $mail->Port = 587;
+
+                $mail->setFrom('yourgmail@gmail.com', 'Nebula Auto Parts');
+                $mail->addAddress($email, $first . " " . $last);
+                $mail->isHTML(true);
+                $mail->Subject = 'Your Nebula 2FA Verification Code';
+                $mail->Body = "<p>Hello $first,</p><p>Your verification code is: <b>$code</b></p>";
+
+                $mail->send();
+                header("Location: verify.php");
+                exit;
+            } catch (Exception $e) {
+                $error = "Failed to send verification email. Error: {$mail->ErrorInfo}";
+            }
         }
     }
 }
 ?>
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Register</title>
-    <link rel="stylesheet" href="../style/login.css" />
-    <link rel="stylesheet" href="../style/index.css" />
-  </head>
-  <body>
-    <div class="login-container">
-      <div class="login-wrapper">
-        <!-- Register Form -->
-        <div class="login-form">
-          <h2>Create an Account</h2>
-          <p class="subtitle">Join Nebula Auto Parts today</p>
+<head>
+  <meta charset="UTF-8" />
+  <title>Register</title>
+  <link rel="stylesheet" href="../style/login.css" />
+  <link rel="stylesheet" href="../style/index.css" />
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-wrapper">
+      <div class="login-form">
+        <h2>Create an Account</h2>
+        <p class="subtitle">Join Nebula Auto Parts today</p>
 
-          <?php if (!empty($error)): ?>
-            <p style="color: red;"><?= htmlspecialchars($error) ?></p>
-          <?php endif; ?>
+        <?php if (!empty($error)): ?>
+          <p style="color: red;"><?= htmlspecialchars($error) ?></p>
+        <?php endif; ?>
 
-          <form method="POST" action="register.php">
-            <label>Name</label>
-            <input type="text" name="name" required />
+        <form method="POST" action="register.php">
+          <label>First Name</label>
+          <input type="text" name="first_name" required />
 
-            <label>Email</label>
-            <input type="email" name="email" required />
+          <label>Middle Name</label>
+          <input type="text" name="middle_name" />
 
-            <label>Password</label>
-            <input type="password" name="password" required />
+          <label>Last Name</label>
+          <input type="text" name="last_name" required />
 
-            <label>Confirm Password</label>
-            <input type="password" name="confirm_password" required />
+          <label>Email</label>
+          <input type="email" name="email" required />
 
-            <!-- Register Button -->
-            <button type="submit" class="btn">Sign Up</button>
+          <label>Password</label>
+          <input type="password" name="password" required />
 
-            <p class="signup">
-              Already have an account? <a href="login.php">Sign in</a>
-            </p>
-          </form>
-        </div>
+          <label>Confirm Password</label>
+          <input type="password" name="confirm_password" required />
 
-        <!-- Promo Image -->
-        <div class="login-promo">
-          <img src="../assets/promo-photo.png" alt="Promo" class="promo-image" />
-        </div>
+          <button type="submit" class="btn">Sign Up</button>
+          <p class="signup">Already have an account? <a href="login.php">Sign in</a></p>
+        </form>
+      </div>
+
+      <div class="login-promo">
+        <img src="../assets/promo-photo.png" alt="Promo" class="promo-image" />
       </div>
     </div>
-  </body>
+  </div>
+</body>
 </html>
