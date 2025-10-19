@@ -16,47 +16,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $price = floatval($_POST['price']);
     $brand = trim($_POST['brand']);
     $description = trim($_POST['description']);
+    $stock = isset($_POST['stock']) ? max(0, (int)$_POST['stock']) : 0; // New stock field
 
     // Validation
-    if (empty($name) || empty($brand) || $price <= 0) {
-        $msg = "Please fill in all required fields with valid data (price must be greater than 0).";
+    if (empty($name) || empty($brand) || $price <= 0 || $stock < 0) {
+        $msg = "Please fill in all required fields with valid data (price must be > 0, stock ≥ 0).";
     } elseif (!empty($_FILES['image']['name'])) {
-        $targetDir = "../uploads/";
-        if (!is_dir($targetDir)) {
-            mkdir($targetDir, 0777, true); // Create folder if not exists (consider security in production)
-        }
-
-        $fileName = time() . "_" . basename($_FILES["image"]["name"]);
-        $targetFile = $targetDir . $fileName;
-        $imageFileType = strtolower(pathinfo($targetFile, PATHINFO_EXTENSION));
-
-        // Allow certain formats and check size (e.g., max 5MB)
-        $allowed = ["jpg", "jpeg", "png", "gif", "webp"];
-        $maxSize = 5 * 1024 * 1024; // 5MB
-        if (!in_array($imageFileType, $allowed)) {
-            $msg = "Only JPG, JPEG, PNG, GIF, and WEBP files are allowed.";
-        } elseif ($_FILES["image"]["size"] > $maxSize) {
-            $msg = "Image file is too large (max 5MB).";
-        } else {
-            if (move_uploaded_file($_FILES["image"]["tmp_name"], $targetFile)) {
-                // Insert into database
-                $stmt = $pdo->prepare("INSERT INTO products (name, price, brand, description, image) VALUES (?, ?, ?, ?, ?)");
-                if ($stmt->execute([$name, $price, $brand, $description, $fileName])) {
-                    $msgType = 'success';
-                    $msg = "Product added successfully!";
-                    header("Location: admin.php?msg=Product+added");
-                    exit;
-                } else {
-                    $msg = "Error saving product to database.";
-                }
+        // existing image upload code...
+        if (move_uploaded_file($_FILES["image"]["tmp_name"], $targetFile)) {
+            // Insert into database, now including stock
+            $stmt = $pdo->prepare("INSERT INTO products (name, price, brand, description, stock, image) VALUES (?, ?, ?, ?, ?, ?)");
+            if ($stmt->execute([$name, $price, $brand, $description, $stock, $fileName])) {
+                $msgType = 'success';
+                $msg = "Product added successfully!";
+                header("Location: admin.php?msg=Product+added");
+                exit;
             } else {
-                $msg = "Error uploading image. Please try again.";
+                $msg = "Error saving product to database.";
             }
         }
     } else {
         $msg = "Please upload a product image.";
     }
 }
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -395,6 +378,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <label for="price"><i class='bx bx-dollar'></i> Price (₱)</label>
                     <input type="number" id="price" name="price" step="0.01" min="0.01" placeholder="0.00" required value="<?= htmlspecialchars($_POST['price'] ?? '') ?>">
                 </div>
+
+                <div class="form-group">
+                    <label for="stock"><i class='bx bx-box'></i> Stock</label>
+                    <input type="number" id="stock" name="stock" min="0" step="1" required placeholder="0" value="<?= htmlspecialchars($_POST['stock'] ?? 0) ?>">
+                </div>
+
 
                 <div class="form-group">
                     <label for="brand"><i class='bx bx-store'></i> Brand</label>

@@ -76,47 +76,48 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <head>
   <meta charset="UTF-8" />
   <title>Register</title>
-  <link rel="stylesheet" href="../style/login.css" />
+  <link rel="stylesheet" href="../style/register.css" />
   <link rel="stylesheet" href="../style/index.css" />
 </head>
 <body>
-  <div class="login-container">
-    <div class="login-wrapper">
-      <div class="login-form">
+  <div class="register-container">
+    <div class="register-card">
         <h2>Create an Account</h2>
         <p class="subtitle">Join Nebula Auto Parts today</p>
 
         <?php if (!empty($error)): ?>
-          <p style="color: red;"><?= htmlspecialchars($error) ?></p>
+            <p class="error-message"><?= htmlspecialchars($error) ?></p>
         <?php endif; ?>
 
         <form method="POST" action="register.php">
-          <label>First Name</label>
-          <input type="text" name="first_name" required />
+            <label>First Name</label>
+            <input type="text" name="first_name" required />
 
-          <label>Middle Name</label>
-          <input type="text" name="middle_name" />
+            <label>Middle Name</label>
+            <input type="text" name="middle_name" />
 
-          <label>Last Name</label>
-          <input type="text" name="last_name" required />
+            <label>Last Name</label>
+            <input type="text" name="last_name" required />
 
-          <label>Email</label>
-          <input type="email" name="email" required />
+            <label>Email</label>
+            <input type="email" name="email" required />
 
-          <label>Password</label>
-          <input type="password" name="password" required />
+            <label>Password</label>
+            <input type="password" name="password" required />
 
-          <label>Confirm Password</label>
-          <input type="password" name="confirm_password" required />
+            <label>Confirm Password</label>
+            <input type="password" name="confirm_password" required />
 
-          <button type="submit" class="btn">Sign Up</button>
-          <p class="signup">Already have an account? <a href="login.php">Sign in</a></p>
+            <button type="submit" class="btn-register">Sign Up</button>
+
+            <p class="text-login">
+                Already have an account? <a href="login.php">Sign in</a>
+            </p>
         </form>
-      </div>
+    </div>
+</div>
 
-      <div class="login-promo">
-        <img src="../assets/promo-photo.png" alt="Promo" class="promo-image" />
-      </div>
+      
     </div>
   </div>
 </body>

@@ -1,21 +1,14 @@
 <?php
 session_start();
-require "db.php"; // Your PDO connection
-
-// Fetch random featured products
-$featuredLimit = 6; // Number of featured items to show
-$featuredStmt = $pdo->query("SELECT * FROM products ORDER BY RAND() LIMIT $featuredLimit");
-$featuredProducts = $featuredStmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
-
 
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Nebula Auto Parts</title>
-    <link rel="stylesheet" href="../style/index.css" />
+    <title>About Us</title>
+    <link rel="stylesheet" href="../style/about.css" />
     
     <link
       href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css"
@@ -73,138 +66,19 @@ $featuredProducts = $featuredStmt->fetchAll(PDO::FETCH_ASSOC);
       </div>
     </div>
 
-    <!-- ✅ Header / Slideshow -->
-    <section id="header">
-      <div>
-        <h1>Your One-Stop Shop for Quality Auto Parts</h1>
-        <p>Your go-to online destination for reliable auto parts and accessories.</p>
-        <div>
-          <button>
-            <svg viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg">
-              <polygon points="12,0 200,0 200,30 188,50 0,50 0,12"
-                stroke="black" stroke-width="2" fill="lightgray" />
-              <text x="50%" y="60%" text-anchor="middle" fill="black" font-size="14" font-family="Arial, sans-serif">
-                LEARN MORE
-              </text>
-            </svg>
-          </button>
+    <img src="../assets/about-us/about-nebula.png" alt="About Nebula" class="about-banner" />
 
-          <button>
-            <svg viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg">
-              <polygon points="12,0 200,0 200,30 188,50 0,50 0,12"
-                stroke="black" stroke-width="2" fill="lightgray" />
-              <text x="50%" y="60%" text-anchor="middle" fill="black" font-size="12" font-family="Arial, sans-serif">
-                CONTACT US TODAY
-              </text>
-            </svg>
-          </button>
-        </div>
-      </div>
-    </section>
+    <img src="../assets/about-us/about-divider.png" alt="Nebula" class="about-banner" />
 
-    <!-- ✅ Extra images -->
-    <img src="../assets/logo-words.png" alt="Nebula Logo" class="nebula-logo" />
-    <img src="../assets/nebula-pagebreak.png" alt="Page Break" class="page-break" />
-    <img src="../assets/nebula-section.png" alt="Nebula Section" class="nebula-section" />
+    <img src="../assets/about-us/about-team.png" alt="Meet Our Team" class="about-banner" />
 
-    <!-- ✅ Carousel Section -->
-    <section class="carousel-section">
-      <div class="carousel-wrapper">
-        <div class="carousel-slide active" style="background-image: url('../assets/carousel-1.png')"></div>
-        <div class="carousel-slide" style="background-image: url('../assets/carousel-2.png')"></div>
-        <div class="carousel-slide" style="background-image: url('../assets/carousel-3.png')"></div>
-      </div>
+    <img src="../assets/about-us/about-mission.png" alt="Mission" class="about-banner" />
 
-      <!-- Navigation arrows -->
-      <button class="carousel-btn left">&#10094;</button>
-      <button class="carousel-btn right">&#10095;</button>
-
-      <!-- Page break -->
-      <img src="../assets/red-pagebreak.png" alt="pagebreak" class="carousel-pagebreak" />
-
-      <!-- Dots -->
-      <div class="carousel-dots">
-        <span class="dot active"></span>
-        <span class="dot"></span>
-        <span class="dot"></span>
-      </div>
-    </section>
-
-    <section class="appoint-section">
-      <div class="appoint-content">
-        <button class="appoint-button">
-          Let’s Get Started , Find What Your Car Needs!
-        </button>
-      </div>
-    </section>
-
-    <section class="featured-section">
-      <h2 class="section-title">Featured Collections</h2>
-      <div class="cards-container">
-        <?php if (!empty($featuredProducts)): ?>
-          <?php foreach ($featuredProducts as $product): ?>
-            <div class="card">
-              <a href="productpage.php?id=<?= $product['id'] ?>" style="text-decoration:none; color:inherit;">
-                <img src="<?= htmlspecialchars($product['image']) ?>" 
-                    alt="<?= htmlspecialchars($product['name']) ?>" 
-                    class="card-image" />
-                <h3 class="card-title"><?= htmlspecialchars($product['name']) ?></h3>
-                <p class="card-price">₱ <?= number_format($product['price'], 2) ?></p>
-              </a>
-            </div>
-          <?php endforeach; ?>
-        <?php else: ?>
-          <p>No featured products available.</p>
-        <?php endif; ?>
-      </div>
-    </section>
-
-
-    <!-- White pagebreak image -->
-    <img src="../assets/white-pagebreak.png" alt="pagebreak" class="white-pagebreak" />
-    <img src="../assets/promo-banner.png" alt="Promo Banner" class="banner-promo" />
-
-    <div class="promo-banner">
-      <img src="../assets/logo.png" alt="Banner" class="promo-bg" />
-      <div class="promo-content">
-        <h1>Save some money.</h1>
-        <p>
-          You deserve it. Check out our discounts and specials for new
-          customers, students, service industry professionals, and more!
-        </p>
-      </div>
-
-      <div class="promo-banner-cards">
-        <div class="promo-card">
-          <div class="promo-card-content">
-            <h3>OIL CHANGE</h3>
-          </div>
-          <div class="promo-card-icon">
-            <span style="font-size: 40px; color: white">◆</span>
-          </div>
-        </div>
-
-        <div class="promo-card">
-          <div class="promo-card-content">
-            <h3>DISCOUNT FOR NEW CUSTOMER</h3>
-          </div>
-          <div class="promo-card-icon">
-            <span style="font-size: 40px; color: white">◆</span>
-          </div>
-        </div>
-
-        <div class="promo-card">
-          <div class="promo-card-content">
-            <h3>STUDENT DISCOUNT</h3>
-          </div>
-          <div class="promo-card-icon">
-            <span style="font-size: 40px; color: white">◆</span>
-          </div>
-        </div>
-      </div>
+    <div class="shop-now">
+      <a href="shop.php" class="shop-button">SHOP NOW<a/>
     </div>
 
-    <img src="/assets/appoint-pagebreak.png" alt="" class="banner-promo" />
+    
 
     <!-- ✅ Footer -->
     <footer class="footer">

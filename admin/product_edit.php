@@ -13,6 +13,14 @@ if (!isset($_GET['id'])) {
     header("Location: admin.php?msg=No+product+ID");
     exit;
 }
+// Existing: $name, $price, $brand, $description, $image
+$stock = intval($_POST['stock'] ?? 0); // Ensure it's an integer
+
+// Validation
+if (empty($name) || empty($brand) || $price <= 0 || $stock < 0) {
+    $msg = "Please fill in all required fields with valid data (price > 0, stock ≥ 0).";
+}
+
 
 $id = (int)$_GET['id'];
 $stmt = $pdo->prepare("SELECT * FROM products WHERE id = ?");
@@ -66,6 +74,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
     }
+
+    $stmt = $pdo->prepare("UPDATE products SET name=?, price=?, brand=?, description=?, image=?, stock=? WHERE id=?");
+        if ($stmt->execute([$name, $price, $brand, $description, $image, $stock, $id])) {
+            $msgType = 'success';
+            $msg = "Product updated successfully!";
+            header("Location: products.php?msg=Product+updated");
+            exit;
+        }
+
 
     if (!$msg) {
         $stmt = $pdo->prepare("UPDATE products SET name=?, price=?, brand=?, description=?, image=? WHERE id=?");
@@ -457,6 +474,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <label for="price"><i class='bx bx-dollar'></i> Price (₱)</label>
                     <input type="number" id="price" name="price" step="0.01" min="0.01" placeholder="0.00" required value="<?= htmlspecialchars($_POST['price'] ?? $product['price']) ?>">
                 </div>
+
+                <div class="form-group">
+                    <label for="stock"><i class='bx bx-cube'></i> Stock</label>
+                    <input type="number" id="stock" name="stock" min="0" step="1" required
+                        value="<?= htmlspecialchars($_POST['stock'] ?? $product['stock'] ?? 0) ?>">
+                </div>
+
 
                 <div class="form-group">
                     <label for="brand"><i class='bx bx-store'></i> Brand</label>

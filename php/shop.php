@@ -1,64 +1,121 @@
 <?php
 session_start();
-require "db.php"; // ✅ PDO connection
+require "db.php"; // ✅ Your PDO connection
 
-// --- Handle search query from URL ---
-$searchQuery = isset($_GET['search']) ? trim($_GET['search']) : "";
-
-// --- Handle brand filter ---
-$selectedBrand = isset($_GET['brand']) ? $_GET['brand'] : "All";
-
-// --- Handle sort ---
-$sort = isset($_GET['sort']) ? $_GET['sort'] : 'name_asc'; // Default: name ascending
-$orderBy = match($sort) {
-    'price_asc' => 'price ASC',
-    'price_desc' => 'price DESC',
-    'name_asc' => 'name ASC',
-    'name_desc' => 'name DESC',
-    default => 'name ASC'
-};
-
-// --- Handle pagination ---
-$page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
-$limit = 8; // Limit to 8 products per page (as requested)
-$offset = ($page - 1) * $limit;
-
-// --- Build WHERE clause for filtering ---
-$whereConditions = [];
-$params = [];
-
-if (!empty($searchQuery)) {
-    $whereConditions[] = "(name LIKE ? OR brand LIKE ?)";
-    $params[] = "%$searchQuery%";
-    $params[] = "%$searchQuery%";
+$userWishlist = [];
+if (isset($_SESSION['user'])) {
+    $stmt = $pdo->prepare("SELECT product_id FROM wishlist WHERE user_id = ?");
+    $stmt->execute([$_SESSION['user']['id']]);
+    $userWishlist = $stmt->fetchAll(PDO::FETCH_COLUMN);
 }
 
-if ($selectedBrand !== "All") {
-    $whereConditions[] = "brand = ?";
+
+
+// Handle adding/removing favorites
+if (isset($_GET['toggle_wishlist'])) {
+    $productId = (int)$_GET['toggle_wishlist'];
+    if (in_array($productId, $_SESSION['wishlist'])) {
+        // Remove if already in wishlist
+        $_SESSION['wishlist'] = array_diff($_SESSION['wishlist'], [$productId]);
+    } else {
+        // Add to wishlist
+        $_SESSION['wishlist'][] = $productId;
+    }
+
+    // Redirect back to avoid query repetition
+    header("Location: shop.php?" . http_build_query(array_diff_key($_GET, ['toggle_wishlist' => ''])) . "#products-section");
+    exit;
+}
+if (!isset($_SESSION['user'])) {
+    header("Location: login.php");
+    exit;
+}
+
+$userId = $_SESSION['user']['id'];
+
+// Remove product from wishlist if requested
+if (isset($_GET['remove_wishlist'])) {
+    $productId = (int)$_GET['remove_wishlist'];
+    $stmt = $pdo->prepare("DELETE FROM wishlist WHERE user_id = ? AND product_id = ?");
+    $stmt->execute([$userId, $productId]);
+
+    // Redirect to avoid repeated deletion
+    header("Location: wishlist.php");
+    exit;
+}
+// --- Capture inputs safely ---
+$selectedCategory = $_GET['category'] ?? '';
+$selectedBrand    = $_GET['brand'] ?? 'All';
+$searchQuery      = $_GET['search'] ?? '';
+$sort             = $_GET['sort'] ?? 'name_asc';
+$page             = max(1, intval($_GET['page'] ?? 1));
+$perPage          = 12; // items per page
+
+// --- Map sort options safely ---
+$sortMap = [
+    'name_asc'   => 'name ASC',
+    'name_desc'  => 'name DESC',
+    'price_asc'  => 'price ASC',
+    'price_desc' => 'price DESC'
+];
+$orderBy = $sortMap[$sort] ?? 'name ASC';
+
+// --- Build dynamic WHERE conditions ---
+$where = [];
+$params = [];
+
+if ($selectedCategory !== '') {
+    $where[] = "category = ?";
+    $params[] = $selectedCategory;
+}
+
+if ($selectedBrand !== 'All' && $selectedBrand !== '') {
+    $where[] = "brand = ?";
     $params[] = $selectedBrand;
 }
 
-$whereClause = empty($whereConditions) ? "" : "WHERE " . implode(" AND ", $whereConditions);
+if ($searchQuery !== '') {
+    $where[] = "(name LIKE ? OR brand LIKE ?)";
+    $params[] = "%$searchQuery%";
+    $params[] = "%$searchQuery%";
+}
 
-// --- Fetch total count for pagination ---
-$countStmt = $pdo->prepare("SELECT COUNT(*) FROM products $whereClause");
+$whereClause = count($where) > 0 ? "WHERE " . implode(" AND ", $where) : "";
+
+// --- Count total products for pagination ---
+$countSql = "SELECT COUNT(*) FROM products $whereClause";
+$countStmt = $pdo->prepare($countSql);
 $countStmt->execute($params);
-$totalProducts = $countStmt->fetchColumn();
-$totalPages = ceil($totalProducts / $limit);
+$totalItems = (int)$countStmt->fetchColumn();
+$totalPages = max(1, ceil($totalItems / $perPage));
 
-// --- Fetch paginated and sorted products ---
-$stmt = $pdo->prepare("SELECT * FROM products $whereClause ORDER BY $orderBy LIMIT ? OFFSET ?");
-$params[] = $limit;
-$params[] = $offset;
-$stmt->execute($params);
+// --- Compute offset ---
+$offset = ($page - 1) * $perPage;
+
+// --- Fetch products with filters, sorting, and pagination ---
+$sql = "SELECT * FROM products $whereClause ORDER BY $orderBy LIMIT ? OFFSET ?";
+$stmt = $pdo->prepare($sql);
+
+// Bind all params correctly
+$bindIndex = 1;
+foreach ($params as $p) {
+    $stmt->bindValue($bindIndex++, $p);
+}
+$stmt->bindValue($bindIndex++, (int)$perPage, PDO::PARAM_INT);
+$stmt->bindValue($bindIndex++, (int)$offset, PDO::PARAM_INT);
+
+$stmt->execute();
 $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// --- Unique brands for filter buttons (fetch all unique brands) ---
+// --- Fetch unique brands for brand filter ---
 $brandStmt = $pdo->query("SELECT DISTINCT brand FROM products WHERE brand IS NOT NULL AND brand != '' ORDER BY brand");
 $brands = $brandStmt->fetchAll(PDO::FETCH_COLUMN);
 array_unshift($brands, "All");
 
-// ✅ Local banner images (add your own files in /assets/banners/)
+// --- Optional: Static categories (adjust if needed) ---
+$categories = ['Tires', 'Brakes', 'Engine Parts', 'Suspension', 'Seats', 'Lighting', 'Accessories'];
+
+// ✅ Banner images (same as before)
 $banners = [
     "../assets/shopparts/shopparts-1.png",
     "../assets/shopparts/shopparts-2.png",
@@ -70,7 +127,10 @@ $banners = [
     "../assets/shopparts/shopparts-8.png",
     "../assets/shopparts/shopparts-9.png",
 ];
+
+
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -166,13 +226,87 @@ $banners = [
         <a href="javascript:history.back()" class="back-button">← Back to Shop</a>
       <?php endif; ?>
 
-      <!-- Filters: Brand + Sort -->
-      <div class="shopparts-filters">
+      <!-- Filters: Category + Brand + Sort -->
+      <div class="shopparts-filters" style="display:flex;flex-direction:column;gap:25px;margin-bottom:30px;">
+
+        <!-- Category Filter -->
+        <div class="shopparts-category-filter" style="display:flex;flex-wrap:wrap;gap:10px;">
+          <?php
+          $categories = ['Tires', 'Brakes', 'Engine Parts', 'Suspension', 'Seats', 'Lighting', 'Accessories'];
+          foreach ($categories as $cat): ?>
+            <a href="?category=<?= urlencode($cat) ?>&brand=<?= urlencode($selectedBrand) ?>&search=<?= urlencode($searchQuery) ?>&sort=<?= urlencode($sort) ?>&page=1#products-section" style="text-decoration:none;">
+              <button style="
+                background: <?= $selectedCategory === $cat ? '#ff4d4d' : '#111' ?>;
+                color: <?= $selectedCategory === $cat ? '#fff' : '#ccc' ?>;
+                border: 1px solid <?= $selectedCategory === $cat ? '#ff4d4d' : '#333' ?>;
+                border-radius: 8px;
+                padding: 8px 14px;
+                font-size: 0.9rem;
+                cursor: pointer;
+                transition: all 0.3s ease;
+              " onmouseover="this.style.borderColor='#ff4d4d';this.style.background='#1a1a1a';" 
+                onmouseout="this.style.borderColor='<?= $selectedCategory === $cat ? '#ff4d4d' : '#333' ?>';this.style.background='<?= $selectedCategory === $cat ? '#ff4d4d' : '#111' ?>';">
+                <?= htmlspecialchars($cat) ?>
+              </button>
+            </a>
+          <?php endforeach; ?>
+        </div>
+            <!-- Search Filter -->
+            <div class="shopparts-search-filter" style="display:flex;align-items:center;gap:10px;">
+                <input 
+                    type="text" 
+                    id="searchInput" 
+                    placeholder="Search products..." 
+                    value="<?= htmlspecialchars($searchQuery) ?>"
+                    style="
+                        background:#111;
+                        color:#fff;
+                        border:1px solid #333;
+                        border-radius:8px;
+                        padding:8px 12px;
+                        font-size:0.9rem;
+                        transition:all 0.3s ease;
+                        flex:1;
+                    "
+                    onmouseover="this.style.borderColor='#ff4d4d';this.style.background='#1a1a1a';"
+                    onmouseout="this.style.borderColor='#333';this.style.background='#111';"
+                    onkeypress="if(event.key === 'Enter'){ applySearch(); }"
+                />
+                <button 
+                    type="button" 
+                    onclick="applySearch()"
+                    style="
+                        background:#ff4d4d;
+                        color:#fff;
+                        border:none;
+                        border-radius:8px;
+                        padding:8px 14px;
+                        cursor:pointer;
+                        font-size:0.9rem;
+                        transition:all 0.3s ease;
+                    "
+                    onmouseover="this.style.background='#e60000';"
+                    onmouseout="this.style.background='#ff4d4d';"
+                >
+                    Search
+                </button>
+            </div>
+
         <!-- Brand Filter -->
-        <div class="shopparts-product-category">
+        <div class="shopparts-product-category" style="display:flex;flex-wrap:wrap;gap:10px;">
           <?php foreach ($brands as $brand): ?>
-            <a href="?brand=<?= urlencode($brand) ?>&search=<?= urlencode($searchQuery) ?>&sort=<?= urlencode($sort) ?>&page=1#products-section">
-              <button class="brand-btn <?= $selectedBrand === $brand ? 'active' : '' ?>">
+            <a href="?brand=<?= urlencode($brand) ?>&category=<?= urlencode($selectedCategory) ?>&search=<?= urlencode($searchQuery) ?>&sort=<?= urlencode($sort) ?>&page=1#products-section" style="text-decoration:none;">
+              <button style="
+                background: <?= $selectedBrand === $brand ? '#ff4d4d' : '#111' ?>;
+                color: <?= $selectedBrand === $brand ? '#fff' : '#ccc' ?>;
+                border: 1px solid <?= $selectedBrand === $brand ? '#ff4d4d' : '#333' ?>;
+                border-radius: 8px;
+                padding: 8px 14px;
+                font-size: 0.9rem;
+                cursor: pointer;
+                transition: all 0.3s ease;
+              " onmouseover="this.style.borderColor='#ff4d4d';this.style.background='#1a1a1a';" 
+                onmouseout="this.style.borderColor='<?= $selectedBrand === $brand ? '#ff4d4d' : '#333' ?>';this.style.background='<?= $selectedBrand === $brand ? '#ff4d4d' : '#111' ?>';">
                 <?= htmlspecialchars($brand) ?>
               </button>
             </a>
@@ -180,39 +314,138 @@ $banners = [
         </div>
 
         <!-- Sort Filter -->
-        <div class="shopparts-sort-filter">
-          <label for="sort-select">Sort by:</label>
-          <select id="sort-select" onchange="applySort(this.value)">
+        <div class="shopparts-sort-filter" style="display:flex;align-items:center;gap:10px;justify-content:flex-end;">
+          <label for="sort-select" style="color:#ccc;font-weight:500;">Sort by:</label>
+          <select id="sort-select" onchange="applySort(this.value)" 
+            style="background:#111;color:#fff;border:1px solid #333;border-radius:8px;padding:8px 12px;font-size:0.9rem;transition:all 0.3s ease;"
+            onmouseover="this.style.borderColor='#ff4d4d';this.style.background='#1a1a1a';"
+            onmouseout="this.style.borderColor='#333';this.style.background='#111';">
             <option value="name_asc" <?= $sort === 'name_asc' ? 'selected' : '' ?>>Name (A-Z)</option>
             <option value="name_desc" <?= $sort === 'name_desc' ? 'selected' : '' ?>>Name (Z-A)</option>
             <option value="price_asc" <?= $sort === 'price_asc' ? 'selected' : '' ?>>Price (Low to High)</option>
             <option value="price_desc" <?= $sort === 'price_desc' ? 'selected' : '' ?>>Price (High to Low)</option>
           </select>
         </div>
+        <!-- Reset Filters Button -->
+      <?php if (!empty($selectedBrand) || !empty($selectedCategory) || !empty($searchQuery) || $sort !== 'name_asc'): ?>
+        <div style="display:flex;justify-content:flex-end;margin-top:10px;">
+          <a href="shop.php#products-section" 
+            style="
+              text-decoration:none;
+              background:#222;
+              color:#ccc;
+              border:1px solid #333;
+              border-radius:8px;
+              padding:8px 14px;
+              font-size:0.9rem;
+              transition:all 0.3s ease;
+            "
+            onmouseover="this.style.borderColor='#ff4d4d';this.style.color='#fff';this.style.background='#1a1a1a';"
+            onmouseout="this.style.borderColor='#333';this.style.color='#ccc';this.style.background='#222';">
+            Reset Filters
+          </a>
+        </div>
+      <?php endif; ?>
       </div>
+      <div style="display:flex;justify-content:flex-end;margin-top:10px;">
+          <a href="wishlist.php" 
+            style="
+              text-decoration:none;
+              background:#111;
+              color:#ccc;
+              border:1px solid #333;
+              border-radius:8px;
+              padding:8px 14px;
+              font-size:0.9rem;
+              transition:all 0.3s ease;
+            "
+            onmouseover="this.style.borderColor='#ff4d4d';this.style.color='#fff';this.style.background='#1a1a1a';"
+            onmouseout="this.style.borderColor='#333';this.style.color='#ccc';this.style.background='#111';">
+            ❤️ View Wishlist
+          </a>
+        </div>
+
+      
+
+      <script>
+      function applySort(sort) {
+        const urlParams = new URLSearchParams(window.location.search);
+        urlParams.set('sort', sort);
+        window.location.search = urlParams.toString();
+      }
+      </script>
+
+
 
       <!-- Product Grid -->
       <div class="shopparts-product-container">
         <?php if (count($products) > 0): ?>
-          <?php foreach ($products as $product): ?>
-            <a href="productpage.php?id=<?= $product['id'] ?>" class="shopparts-product-card-link">
-              <div class="shopparts-product-card">
+          <?php foreach ($products as $product): 
+              $outOfStock = ($product['stock'] <= 0);
+          ?>
+          <div class="shopparts-product-card-link" 
+              style="<?= $outOfStock ? 'pointer-events:none; opacity:0.5;' : '' ?>">
+            <div class="shopparts-product-card" style="position: relative;">
+              
+              <a href="productpage.php?id=<?= $product['id'] ?>" style="text-decoration:none; color:inherit;">
                 <div class="shopparts-product-image-wrapper">
                   <img src="<?= htmlspecialchars($product['image']) ?>" 
-                       alt="<?= htmlspecialchars($product['name']) ?>" 
-                       class="shopparts-product-image">
+                      alt="<?= htmlspecialchars($product['name']) ?>" 
+                      class="shopparts-product-image">
                 </div>
                 <div class="shopparts-product-info">
                   <h3 class="shopparts-product-title"><?= htmlspecialchars($product['name']) ?></h3>
                   <p class="shopparts-product-price">₱ <?= number_format($product['price'], 2) ?></p>
+                  <?php if ($outOfStock): ?>
+                      <p style="color:#aaa; font-weight:bold;">Out of Stock</p>
+                  <?php endif; ?>
                 </div>
-              </div>
-            </a>
+              </a>
+
+              <!-- ❤️ Wishlist Toggle (bottom-right) -->
+              <?php $inWishlist = in_array($product['id'], $userWishlist ?? []); ?>
+              <a href="?toggle_wishlist=<?= $product['id'] ?>&<?= http_build_query($_GET) ?>"
+                title="<?= $inWishlist ? 'Remove from Wishlist' : 'Add to Wishlist' ?>"
+                onclick="event.stopPropagation(); event.preventDefault(); toggleWishlist(<?= $product['id'] ?>)"
+                style="position:absolute; bottom:10px; right:10px; font-size:1.3rem; text-decoration:none;">
+                <i id="heart-<?= $product['id'] ?>" 
+                  class='bx <?= $inWishlist ? "bxs-heart" : "bx-heart" ?>'
+                  style="color:<?= $inWishlist ? '#ff4d4d' : '#777' ?>;transition:color 0.3s ease;"
+                  onmouseover="this.style.color='#ff4d4d';"
+                  onmouseout="this.style.color='<?= $inWishlist ? '#ff4d4d' : '#777' ?>';"></i>
+              </a>
+
+            </div>
+          </div>
           <?php endforeach; ?>
+
         <?php else: ?>
           <p>No products found.</p>
         <?php endif; ?>
       </div>
+
+      <script>
+      function toggleWishlist(id) {
+        // Use fetch to toggle wishlist without reloading
+        fetch(`toggle_wishlist.php?id=${id}`)
+          .then(response => response.json())
+          .then(data => {
+            const icon = document.getElementById('heart-' + id);
+            if (!icon) return;
+            if (data.inWishlist) {
+              icon.classList.remove('bx-heart');
+              icon.classList.add('bxs-heart');
+              icon.style.color = '#ff4d4d';
+            } else {
+              icon.classList.remove('bxs-heart');
+              icon.classList.add('bx-heart');
+              icon.style.color = '#777';
+            }
+          });
+      }
+      </script>
+
+
 
       <!-- Pagination with Arrow-Focused Navigation -->
       <?php if ($totalPages > 1): ?>
@@ -325,6 +558,21 @@ $banners = [
           }
         }
       });
+
+      function applySearch() {
+      const searchTerm = document.getElementById('searchInput').value.trim();
+      const urlParams = new URLSearchParams(window.location.search);
+
+      if(searchTerm !== '') {
+          urlParams.set('search', searchTerm);
+      } else {
+          urlParams.delete('search'); // Remove filter if empty
+      }
+
+      urlParams.set('page', '1'); // Reset pagination
+      window.location.search = urlParams.toString() + '#products-section';
+  }
+
     </script>
 </body>
 </html>

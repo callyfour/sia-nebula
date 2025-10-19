@@ -14,7 +14,16 @@ if (!$userId) {
 $error = '';
 $success = '';
 
-// Fetch cart items
+// ✅ Fetch user profile to autofill checkout form
+$stmt = $pdo->prepare("SELECT name, billingAddress, shippingAddress FROM users WHERE id = ?");
+$stmt->execute([$userId]);
+$userProfile = $stmt->fetch(PDO::FETCH_ASSOC);
+
+$name = $userProfile['name'] ?? '';
+$billingAddress = $userProfile['billingAddress'] ?? '';
+$shippingAddress = $userProfile['shippingAddress'] ?? '';
+
+// ✅ Fetch cart items
 $stmt = $pdo->prepare("
     SELECT c.product_id, c.quantity, p.name, p.price
     FROM cart c
@@ -24,23 +33,28 @@ $stmt = $pdo->prepare("
 $stmt->execute([$userId]);
 $cartItems = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// 1. Fetch cart & calculate total
+// ✅ Calculate total
 $totalPrice = 0;
 foreach ($cartItems as $item) {
     $totalPrice += $item['price'] * $item['quantity'];
 }
 
-// 2. Handle form submission
+// ✅ Handle form submission
 if (isset($_POST['paynow'])) {
     $name = trim($_POST['name'] ?? '');
-    $address = trim($_POST['address'] ?? '');
+    $shippingAddress = trim($_POST['shippingAddress'] ?? '');
+    $billingAddress = trim($_POST['billingAddress'] ?? '');
 
-    if (!$name || !$address) {
+    if (!$name || !$shippingAddress || !$billingAddress) {
         $error = "Please fill in all fields.";
     } elseif (empty($cartItems)) {
         $error = "Your cart is empty.";
     } else {
-        // 3. Create Stripe session
+        // ✅ Save updated addresses to the user's profile
+        $stmt = $pdo->prepare("UPDATE users SET name = ?, shippingAddress = ?, billingAddress = ? WHERE id = ?");
+        $stmt->execute([$name, $shippingAddress, $billingAddress, $userId]);
+
+        // ✅ Create Stripe checkout session
         $line_items = [];
         foreach ($cartItems as $item) {
             $line_items[] = [
@@ -61,21 +75,22 @@ if (isset($_POST['paynow'])) {
             'cancel_url' => "http://localhost/nebula/php/checkout.php",
         ]);
 
-        // 4. Insert order AFTER session is created
+        // ✅ Insert order into database
         $stmt = $pdo->prepare("INSERT INTO orders 
-            (user_id, stripe_session_id, total_amount, shipping_name, shipping_address, status, created_at)
-            VALUES (?, ?, ?, ?, ?, 'pending', ?)");
+            (user_id, stripe_session_id, total_amount, shipping_name, shipping_address, billing_address, status, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)");
         $stmt->execute([
             $userId,
             $checkout_session->id,
             $totalPrice,
             $name,
-            $address,
+            $shippingAddress,
+            $billingAddress,
             date('Y-m-d H:i:s')
         ]);
         $orderId = $pdo->lastInsertId();
 
-        // 5. Insert order items
+        // ✅ Insert order items
         foreach ($cartItems as $item) {
             $stmt = $pdo->prepare("INSERT INTO order_items 
                 (order_id, product_id, quantity, price) 
@@ -83,16 +98,12 @@ if (isset($_POST['paynow'])) {
             $stmt->execute([$orderId, $item['product_id'], $item['quantity'], $item['price']]);
         }
 
-        // 6. Redirect to Stripe checkout
+        // ✅ Redirect to Stripe checkout
         header("Location: " . $checkout_session->url);
         exit;
     }
 }
-
-
 ?>
-
-
 
 <!DOCTYPE html>
 <html lang="en">
@@ -102,16 +113,17 @@ if (isset($_POST['paynow'])) {
 <link rel="stylesheet" href="../style/navbar.css">
 <link rel="stylesheet" href="../style/cart.css">
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
- <!-- PayMongo JS SDK -->
 <style>
     #card-element { border: 1px solid #ccc; padding: 10px; margin: 10px 0; }
     .payment-form { max-width: 400px; margin: 20px 0; }
     .payment-form input[type="submit"] { background: #007bff; color: white; padding: 10px 20px; border: none; cursor: pointer; }
     .success-message { background: #d4edda; color: #155724; padding: 15px; border-radius: 4px; margin: 10px 0; }
+    textarea { resize: vertical; }
 </style>
 </head>
 <body>
-<!-- Navbar (unchanged) -->
+
+<!-- ✅ Navbar -->
 <div class="navbar">
     <div class="nav-logo" onclick="window.location.href='index.php'">
         <img src="../assets/logo.png" alt="Logo">
@@ -161,48 +173,86 @@ if (isset($_POST['paynow'])) {
         <?php if (empty($cartItems)): ?>
             <p>Your cart is empty. <a href="shop.php">Shop now</a>?</p>
         <?php else: ?>
-            <table style="width:100%; margin-bottom:20px; border-collapse:collapse;">
+            <table style="width:100%; margin-bottom:20px; border-collapse:collapse; text-align:center;">
                 <thead>
                     <tr style="border-bottom:1px solid #444;">
-                        <th>Product</th>
-                        <th>Unit Price</th>
-                        <th>Quantity</th>
-                        <th>Subtotal</th>
+                        <th style="padding:12px; color:#fff; background:#111;">Product</th>
+                        <th style="padding:12px; color:#fff; background:#111;">Unit Price</th>
+                        <th style="padding:12px; color:#fff; background:#111;">Quantity</th>
+                        <th style="padding:12px; color:#fff; background:#111;">Subtotal</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php foreach ($cartItems as $item): ?>
-                        <tr style="border-bottom:1px solid #333;">
-                            <td><?= htmlspecialchars($item['name']) ?></td>
-                            <td>₱ <?= number_format($item['price'], 2) ?></td>
-                            <td><?= $item['quantity'] ?></td>
-                            <td>₱ <?= number_format($item['price'] * $item['quantity'], 2) ?></td>
+                        <tr style="border-bottom:1px solid #333; background:#1a1a1a; color:#fff;">
+                            <td style="padding:10px;"><?= htmlspecialchars($item['name']) ?></td>
+                            <td style="padding:10px;">₱ <?= number_format($item['price'], 2) ?></td>
+                            <td style="padding:10px;"><?= $item['quantity'] ?></td>
+                            <td style="padding:10px;">₱ <?= number_format($item['price'] * $item['quantity'], 2) ?></td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
             </table>
 
-            <h3>Total: ₱ <?= number_format($totalPrice, 2) ?></h3>
 
-            <!-- Shipping form only -->
+            <div style="
+                display: flex; 
+                justify-content: flex-end; 
+                align-items: center; 
+                background: linear-gradient(135deg, #1a1a1a, #111); 
+                color: #fff; 
+                padding: 18px 24px; 
+                border-radius: 12px; 
+                border: 1px solid #333; 
+                box-shadow: 0 0 10px rgba(255, 77, 77, 0.2); 
+                margin-top: 20px; 
+                font-family: 'Poppins', sans-serif;
+            ">
+                <h3 style="margin: 0; font-size: 1.25rem; font-weight: 600; color: #ccc;">Total:&nbsp;</h3>
+                <span style="font-size: 1.5rem; font-weight: 700; color: #ff4d4d;">
+                    ₱ <?= number_format($totalPrice, 2) ?>
+                </span>
+            </div>
+
+            <!-- ✅ Form with autofilled fields -->
             <form method="POST">
-                <label for="name">Name:</label><br>
-                <input type="text" name="name" id="name" required style="width:100%; padding:8px;"><br><br>
+                <label for="name"><i class="bx bx-user"></i> Full Name:</label><br>
+                <input 
+                    type="text" 
+                    name="name" 
+                    id="name" 
+                    required 
+                    value="<?= htmlspecialchars($name) ?>" 
+                    style="width:100%; padding:10px 14px; background:#111; color:#fff; border:1px solid #333; border-radius:8px; font-size:1rem;"><br><br>
 
-                <label for="address">Shipping Address:</label><br>
-                <textarea name="address" id="address" rows="4" required style="width:100%; padding:8px;"></textarea><br><br>
+                <label for="shippingAddress"><i class="bx bx-package"></i> Shipping Address:</label><br>
+                <textarea 
+                    name="shippingAddress" 
+                    id="shippingAddress" 
+                    rows="3" 
+                    required 
+                    style="width:100%; padding:10px 14px; background:#111; color:#fff; border:1px solid #333; border-radius:8px; font-size:1rem;"><?= htmlspecialchars($shippingAddress) ?></textarea><br><br>
 
-                <button type="submit" name="paynow" class="checkout-btn">Proceed to Payment</button>
+                <label for="billingAddress"><i class="bx bx-credit-card"></i> Billing Address:</label><br>
+                <textarea 
+                    name="billingAddress" 
+                    id="billingAddress" 
+                    rows="3" 
+                    required 
+                    style="width:100%; padding:10px 14px; background:#111; color:#fff; border:1px solid #333; border-radius:8px; font-size:1rem;"><?= htmlspecialchars($billingAddress) ?></textarea><br><br>
+
+                <button 
+                    type="submit" 
+                    name="paynow" 
+                    class="checkout-btn" 
+                    style="background:linear-gradient(135deg,#ff4d4d,#cc0000);color:#fff;border:none;padding:12px 24px;border-radius:8px;font-weight:600;cursor:pointer;width:100%;font-size:1rem;">
+                    Proceed to Payment
+                </button>
             </form>
+
         <?php endif; ?>
     </div>
 </div>
-
-
-
-
-
-
 
 </body>
 </html>

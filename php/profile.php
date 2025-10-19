@@ -32,15 +32,21 @@ if (!$profile) {
 } else {
     $profileExists = true;
     // Fill missing keys
-    $profile = array_merge([
+        $profile = array_merge([
         'name' => '',
+        'first_name' => '',
+        'middle_name' => '',
+        'last_name' => '',
         'email' => '',
         'phone' => '',
         'gender' => '',
         'address' => '',
+        'billingAddress' => '',
+        'shippingAddress' => '',
         'profilePicture' => '',
         'authProvider' => 'local'
     ], $profile);
+
 }
 
 $isGoogleUser = ($profile['authProvider'] ?? 'local') === 'google';
@@ -49,9 +55,15 @@ $isGoogleUser = ($profile['authProvider'] ?? 'local') === 'google';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
 
     $name = trim($_POST['name'] ?? '');
+    $firstName = trim($_POST['first_name'] ?? '');
+    $middleName = trim($_POST['middle_name'] ?? '');
+    $lastName = trim($_POST['last_name'] ?? '');
+    $name = trim("$firstName $middleName $lastName"); // for legacy compatibility
     $phone = trim($_POST['phone'] ?? '');
     $gender = trim($_POST['gender'] ?? '');
     $address = trim($_POST['address'] ?? '');
+    $billingAddress = trim($_POST['billingAddress'] ?? '');
+    $shippingAddress = trim($_POST['shippingAddress'] ?? '');
     $profilePicture = $profile['profilePicture'];
 
     // Validation
@@ -88,8 +100,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
 
         // Update DB if no errors
         if ($messageType !== 'error') {
-            $stmt = $pdo->prepare("UPDATE users SET name=?, phone=?, gender=?, address=?, profilePicture=? WHERE id=?");
-            if ($stmt->execute([$name, $phone, $gender, $address, $profilePicture, $userId])) {
+            $stmt = $pdo->prepare("UPDATE users 
+                SET first_name=?, middle_name=?, last_name=?, name=?, phone=?, gender=?, address=?, billingAddress=?, shippingAddress=?, profilePicture=? 
+                WHERE id=?");
+            $stmt->execute([$firstName, $middleName, $lastName, $name, $phone, $gender, $address, $billingAddress, $shippingAddress, $profilePicture, $userId]);
                 $messageType = 'success';
                 $message = "✅ Profile updated successfully!";
                 // Refresh profile data
@@ -102,7 +116,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
             }
         }
     }
-}
+
 
 // Logout
 if (isset($_POST['logout'])) {
@@ -191,9 +205,15 @@ function getProfilePictureUrl($profile) {
         <div class="profile-sidebar">
             <h3><i class='bx bx-menu'></i> Menu</h3>
             <form method="POST">
-                <button class="active" type="button"><i class='bx bx-user'></i> Profile</button>
-                <button type="button"><i class='bx bx-cog'></i> Settings</button>
-                <button type="submit" name="logout"><i class='bx bx-log-out'></i> Logout</button>
+                <button class="active" type="button" onclick="goProfilePage('profile')">
+                    <i class='bx bx-user'></i> Profile
+                </button>
+                <button type="button" onclick="goProfilePage('contact')">
+                    <i class='bx bx-map'></i> Contact & Address
+                </button>
+                <button type="submit" name="logout">
+                    <i class='bx bx-log-out'></i> Logout
+                </button>
             </form>
         </div>
 
@@ -225,19 +245,34 @@ function getProfilePictureUrl($profile) {
                     </div>
                 <?php endif; ?>
 
-                <div class="profile-name"><?= htmlspecialchars($profile['name'] ?: 'Your Name') ?></div>
+                <div class="profile-name">
+                    <?= htmlspecialchars(trim("{$profile['first_name']} {$profile['middle_name']} {$profile['last_name']}") ?: 'Your Name') ?>
+                </div>
+
                 <div class="profile-role"><?= $isGoogleUser  ? 'Google User' : 'Local User' ?></div>
 
-                <div class="form-row">
+              <div class="form-row three-cols">
                     <div>
-                        <label for="name"><i class='bx bx-user'></i> Name</label>
-                        <input type="text" id="name" name="name" value="<?= htmlspecialchars($profile['name']) ?>" required>
+                        <label for="first_name"><i class='bx bx-user'></i> First Name</label>
+                        <input type="text" id="first_name" name="first_name" value="<?= htmlspecialchars($profile['first_name']) ?>" required>
                     </div>
                     <div>
-                        <label for="email"><i class='bx bx-envelope'></i> Email</label>
-                        <input type="email" id="email" name="email" value="<?= htmlspecialchars($profile['email']) ?>" disabled>
+                        <label for="middle_name"><i class='bx bx-user'></i> Middle Name</label>
+                        <input type="text" id="middle_name" name="middle_name" value="<?= htmlspecialchars($profile['middle_name']) ?>">
                     </div>
+                    <div>
+                        <label for="last_name"><i class='bx bx-user'></i> Last Name</label>
+                        <input type="text" id="last_name" name="last_name" value="<?= htmlspecialchars($profile['last_name']) ?>" required>
+                    </div>
+                    </div>
+
+
+            <div class="form-row">
+                <div>
+                    <label for="email"><i class='bx bx-envelope'></i> Email</label>
+                    <input type="email" id="email" name="email" value="<?= htmlspecialchars($profile['email']) ?>" disabled>
                 </div>
+            </div>
 
                 <div class="form-row">
                     <div>
@@ -254,11 +289,7 @@ function getProfilePictureUrl($profile) {
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="address"><i class='bx bx-map'></i> Address</label>
-                    <textarea id="address" name="address" placeholder="Enter your address"><?= htmlspecialchars($profile['address'] ?? '') ?></textarea>
-                </div>
-
+                
                 <div class="btn-container">
                     <button type="submit" name="save" class="btn-save">
                         <i class='bx bx-save'></i> <?= $profileExists ? 'Save Changes' : 'Create Profile' ?>
@@ -325,6 +356,12 @@ function getProfilePictureUrl($profile) {
                 alert('Name is required.');
             }
         });
+
+        function goProfilePage(page) {
+            if(page === 'profile') window.location.href = 'profile.php';
+            if(page === 'contact') window.location.href = 'profile_contact.php';
+        }
+
     </script>
 </body>
 </html>
