@@ -8,21 +8,15 @@ if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'admin') {
     exit;
 }
 
-// ✅ Get product
+// ✅ Validate product ID
 if (!isset($_GET['id'])) {
     header("Location: admin.php?msg=No+product+ID");
     exit;
 }
-// Existing: $name, $price, $brand, $description, $image
-$stock = intval($_POST['stock'] ?? 0); // Ensure it's an integer
-
-// Validation
-if (empty($name) || empty($brand) || $price <= 0 || $stock < 0) {
-    $msg = "Please fill in all required fields with valid data (price > 0, stock ≥ 0).";
-}
-
 
 $id = (int)$_GET['id'];
+
+// ✅ Fetch existing product
 $stmt = $pdo->prepare("SELECT * FROM products WHERE id = ?");
 $stmt->execute([$id]);
 $product = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -33,70 +27,130 @@ if (!$product) {
 }
 
 $msg = null;
-$msgType = 'error'; // 'success' or 'error'
+$msgType = 'error';
 
-// ✅ Handle update
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = trim($_POST['name']);
     $price = floatval($_POST['price']);
     $brand = trim($_POST['brand']);
     $description = trim($_POST['description']);
-    $image = $product['image']; // default keep old
+    $stock = intval($_POST['stock']);
+    $image = $product['image']; // keep old image by default
 
-    // Validation
-    if (empty($name) || empty($brand) || $price <= 0) {
-        $msg = "Please fill in all required fields with valid data (price must be greater than 0).";
-    } elseif (!empty($_FILES['image']['name'])) {
-        $targetDir = "../uploads/";
-        if (!is_dir($targetDir)) {
-            mkdir($targetDir, 0777, true);
-        }
+    // ✅ Basic validation
+    if (empty($name) || empty($brand) || $price <= 0 || $stock < 0) {
+        $msg = "Please fill in all required fields with valid data (price > 0, stock ≥ 0).";
+    } else {
+        // ✅ Handle image upload if new one is selected
+        if (!empty($_FILES['image']['name'])) {
+            $targetDir = "../uploads/";
+            if (!is_dir($targetDir)) {
+                mkdir($targetDir, 0777, true);
+            }
 
-        $fileName = time() . "_" . basename($_FILES["image"]["name"]);
-        $targetFile = $targetDir . $fileName;
-        $imageFileType = strtolower(pathinfo($targetFile, PATHINFO_EXTENSION));
+            $fileName = time() . "_" . basename($_FILES["image"]["name"]);
+            $targetFile = $targetDir . $fileName;
+            $imageFileType = strtolower(pathinfo($targetFile, PATHINFO_EXTENSION));
 
-        $allowed = ["jpg", "jpeg", "png", "gif", "webp"];
-        $maxSize = 5 * 1024 * 1024; // 5MB
-        if (!in_array($imageFileType, $allowed)) {
-            $msg = "Only JPG, JPEG, PNG, GIF, and WEBP files are allowed.";
-        } elseif ($_FILES["image"]["size"] > $maxSize) {
-            $msg = "Image file is too large (max 5MB).";
-        } else {
-            if (move_uploaded_file($_FILES["image"]["tmp_name"], $targetFile)) {
-                // Delete old file if exists
-                if (!empty($product['image']) && file_exists("../uploads/" . $product['image'])) {
-                    unlink("../uploads/" . $product['image']);
-                }
-                $image = $fileName;
+            $allowed = ["jpg", "jpeg", "png", "gif", "webp"];
+            $maxSize = 5 * 1024 * 1024; // 5MB
+
+            if (!in_array($imageFileType, $allowed)) {
+                $msg = "Only JPG, JPEG, PNG, GIF, and WEBP files are allowed.";
+            } elseif ($_FILES["image"]["size"] > $maxSize) {
+                $msg = "Image file is too large (max 5MB).";
             } else {
-                $msg = "Error uploading image. Please try again.";
+                if (move_uploaded_file($_FILES["image"]["tmp_name"], $targetFile)) {
+                    // Delete old image if exists
+                    if (!empty($product['image']) && file_exists("../uploads/" . $product['image'])) {
+                        unlink("../uploads/" . $product['image']);
+                    }
+                    $image = $fileName;
+                } else {
+                    $msg = "Error uploading image. Please try again.";
+                }
             }
         }
-    }
 
-    $stmt = $pdo->prepare("UPDATE products SET name=?, price=?, brand=?, description=?, image=?, stock=? WHERE id=?");
-        if ($stmt->execute([$name, $price, $brand, $description, $image, $stock, $id])) {
-            $msgType = 'success';
-            $msg = "Product updated successfully!";
-            header("Location: products.php?msg=Product+updated");
-            exit;
-        }
+        if (!$msg) {
+            // ✅ Get old stock before updating
+            $oldStock = (int)$product['stock'];
+            $newStock = (int)$stock;
+
+            // ✅ Update product
+            $stmt = $pdo->prepare("
+                UPDATE products 
+                SET name=?, price=?, brand=?, description=?, image=?, stock=? 
+                WHERE id=?
+            ");
+            if ($stmt->execute([$name, $price, $brand, $description, $image, $newStock, $id])) {
+
+                // ✅ Detect Stock Change → Send Notifications
+                if ($oldStock != $newStock) {
+                    $notifMessage = null;
+
+                    if ($oldStock > 0 && $newStock <= 0) {
+                        // ⚠️ Product just went OUT OF STOCK
+                        $notifMessage = "⚠️ '{$name}' is now out of stock.";
+                    } elseif ($oldStock <= 0 && $newStock > 0) {
+                        // ✅ Product just came BACK IN STOCK
+                        $notifMessage = "✅ '{$name}' is now back in stock!";
+                    }
+
+                    if ($notifMessage) {
+                        // Send notifications to all wishlisted users
+                        $wishlistUsers = $pdo->prepare("SELECT user_id FROM wishlist WHERE product_id = ?");
+                        $wishlistUsers->execute([$id]);
+                        $users = $wishlistUsers->fetchAll(PDO::FETCH_ASSOC);
+
+                        foreach ($users as $u) {
+                            $insertNotif = $pdo->prepare("
+                                INSERT INTO notifications (user_id, product_id, message)
+                                VALUES (?, ?, ?)
+                            ");
+                            $insertNotif->execute([$u['user_id'], $id, $notifMessage]);
+                        }
+                    }
+                }
+
+                if ($newStock <= 0) {
+                $wishlistUsers = $pdo->prepare("SELECT user_id FROM wishlist WHERE product_id = ?");
+                $wishlistUsers->execute([$productId]);
+                $users = $wishlistUsers->fetchAll(PDO::FETCH_COLUMN);
+
+                foreach ($users as $uid) {
+                    $check = $pdo->prepare("
+                        SELECT COUNT(*) FROM notifications 
+                        WHERE user_id = ? AND message LIKE ? 
+                        AND created_at >= NOW() - INTERVAL 1 DAY
+                    ");
+                    $check->execute([$uid, "%{$productName}%"]);
+                    $alreadyNotified = $check->fetchColumn();
+
+                    if ($alreadyNotified == 0) {
+                        $msg = "The product '{$productName}' you wishlisted is now out of stock.";
+                        $insertNotif = $pdo->prepare("
+                            INSERT INTO notifications (user_id, message) VALUES (?, ?)
+                        ");
+                        $insertNotif->execute([$uid, $msg]);
+                    }
+                }
+            }
 
 
-    if (!$msg) {
-        $stmt = $pdo->prepare("UPDATE products SET name=?, price=?, brand=?, description=?, image=? WHERE id=?");
-        if ($stmt->execute([$name, $price, $brand, $description, $image, $id])) {
-            $msgType = 'success';
-            $msg = "Product updated successfully!";
-            header("Location: admin.php?msg=Product+updated");
-            exit;
-        } else {
-            $msg = "Error updating product in database.";
+
+                $msgType = 'success';
+                $msg = "Product updated successfully!";
+                header("Location: products.php?msg=Product+updated");
+                exit;
+            } else {
+                $msg = "Error updating product in database.";
+            }
         }
     }
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>

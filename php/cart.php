@@ -3,7 +3,6 @@ session_start();
 require "db.php";
 
 $userId = $_SESSION['user']['id'] ?? null;
-
 if (!$userId) {
     header("Location: login.php");
     exit;
@@ -14,22 +13,31 @@ $productId = intval($_POST['productId'] ?? 0);
 $quantity = intval($_POST['quantity'] ?? 1);
 $productIds = $_POST['productIds'] ?? [];
 
+// 🧠 Handle actions
 if ($action) {
     switch ($action) {
         case 'add':
         case 'buyNow':
             if ($productId > 0) {
-                // Check if product already in cart
-                $stmt = $pdo->prepare("SELECT * FROM cart WHERE user_id = ? AND product_id = ?");
-                $stmt->execute([$userId, $productId]);
-                $existing = $stmt->fetch(PDO::FETCH_ASSOC);
+                // Fetch product stock
+                $stmt = $pdo->prepare("SELECT stock FROM products WHERE id = ?");
+                $stmt->execute([$productId]);
+                $product = $stmt->fetch(PDO::FETCH_ASSOC);
 
-                if ($existing) {
-                    $stmt = $pdo->prepare("UPDATE cart SET quantity = quantity + ? WHERE id = ?");
-                    $stmt->execute([$quantity, $existing['id']]);
-                } else {
-                    $stmt = $pdo->prepare("INSERT INTO cart (user_id, product_id, quantity) VALUES (?, ?, ?)");
-                    $stmt->execute([$userId, $productId, $quantity]);
+                if ($product && $product['stock'] > 0) {
+                    $stmt = $pdo->prepare("SELECT * FROM cart WHERE user_id = ? AND product_id = ?");
+                    $stmt->execute([$userId, $productId]);
+                    $existing = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                    if ($existing) {
+                        $newQty = min($existing['quantity'] + $quantity, $product['stock']);
+                        $stmt = $pdo->prepare("UPDATE cart SET quantity = ? WHERE id = ?");
+                        $stmt->execute([$newQty, $existing['id']]);
+                    } else {
+                        $quantity = min($quantity, $product['stock']);
+                        $stmt = $pdo->prepare("INSERT INTO cart (user_id, product_id, quantity) VALUES (?, ?, ?)");
+                        $stmt->execute([$userId, $productId, $quantity]);
+                    }
                 }
             }
 
@@ -41,8 +49,16 @@ if ($action) {
 
         case 'inc':
             if ($productId > 0) {
-                $stmt = $pdo->prepare("UPDATE cart SET quantity = quantity + 1 WHERE user_id = ? AND product_id = ?");
+                $stmt = $pdo->prepare("SELECT p.stock, c.quantity 
+                    FROM products p JOIN cart c ON p.id = c.product_id
+                    WHERE c.user_id = ? AND c.product_id = ?");
                 $stmt->execute([$userId, $productId]);
+                $data = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                if ($data && $data['quantity'] < $data['stock']) {
+                    $stmt = $pdo->prepare("UPDATE cart SET quantity = quantity + 1 WHERE user_id = ? AND product_id = ?");
+                    $stmt->execute([$userId, $productId]);
+                }
             }
             break;
 
@@ -73,9 +89,9 @@ if ($action) {
     exit;
 }
 
-// Fetch cart items
+// 🛒 Fetch cart items with stock
 $stmt = $pdo->prepare("
-    SELECT c.product_id, c.quantity, p.name, p.price, p.image
+    SELECT c.product_id, c.quantity, p.name, p.price, p.image, p.stock
     FROM cart c
     JOIN products p ON c.product_id = p.id
     WHERE c.user_id = ?
@@ -83,12 +99,14 @@ $stmt = $pdo->prepare("
 $stmt->execute([$userId]);
 $cartItems = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Calculate total
 $totalPrice = 0;
+$outOfStockItems = [];
 foreach ($cartItems as $item) {
     $totalPrice += $item['price'] * $item['quantity'];
+    if ($item['stock'] <= 0) $outOfStockItems[] = $item['name'];
 }
 ?>
+
 
 <!-- HTML rendering cart here (reuse your existing HTML) -->
 
@@ -213,10 +231,11 @@ foreach ($cartItems as $item) {
     <?php foreach ($cartItems as $item): ?>
         <div class="cart-item">
             <input type="checkbox" name="productIds[]" value="<?= $item['product_id'] ?>" class="item-checkbox">
-            <img src="<?= htmlspecialchars($item['image']) ?>" alt="<?= htmlspecialchars($item['name']) ?>" class="cart-item-image">
+            <img src="<?= htmlspecialchars($item['image'] ?: '../assets/no-image.png') ?>" alt="<?= htmlspecialchars($item['name']) ?>" class="cart-item-image">
             <div class="cart-item-info">
                 <h3><?= htmlspecialchars($item['name']) ?></h3>
                 <p>Unit Price: ₱ <?= number_format($item['price'], 2) ?></p>
+                <p>Stock: <?= $item['stock'] > 0 ? $item['stock'] : '<span style="color:#ff4d4d;">Out of stock</span>' ?></p>
                 <p>Subtotal (<?= $item['quantity'] ?> pcs): <strong>₱ <?= number_format($item['price'] * $item['quantity'], 2) ?></strong></p>
 
                 <div class="cart-item-controls">
@@ -224,7 +243,7 @@ foreach ($cartItems as $item) {
                         <input type="hidden" name="productId" value="<?= $item['product_id'] ?>">
                         <button type="submit" name="action" value="dec">-</button>
                         <span><?= $item['quantity'] ?></span>
-                        <button type="submit" name="action" value="inc">+</button>
+                        <button type="submit" name="action" value="inc" <?= $item['quantity'] >= $item['stock'] ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : '' ?>>+</button>
                     </form>
                 </div>
             </div>
@@ -257,5 +276,6 @@ foreach ($cartItems as $item) {
     </div>
 </div>
 </div>
+
 </body>
 </html>

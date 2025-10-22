@@ -22,6 +22,9 @@ function fetchCount($pdo, $query) {
         return 0;  // Fallback value
     }
 }
+// Fetch out-of-stock products
+$outOfStockStmt = $pdo->query("SELECT name FROM products WHERE stock <= 0");
+$outOfStockProducts = $outOfStockStmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Fetch existing counts using the new function
 $totalOrders = fetchCount($pdo, "SELECT COUNT(*) FROM orders");
@@ -104,6 +107,22 @@ $recentOrders = $pdo->query("SELECT * FROM orders ORDER BY created_at DESC LIMIT
                 </div>
             </section>
 
+            <?php if (!empty($outOfStockProducts)): ?>
+                <div id="stockPopup" class="popup-overlay">
+                <div class="popup-content">
+                    <h2><i class='bx bxs-error-circle'></i> Out of Stock Alert</h2>
+                    <p>The following products are currently out of stock:</p>
+                    <ul>
+                    <?php foreach ($outOfStockProducts as $item): ?>
+                        <li><?= htmlspecialchars($item['name']) ?></li>
+                    <?php endforeach; ?>
+                    </ul>
+                    <button onclick="closePopup()">OK</button>
+                </div>
+                </div>
+            <?php endif; ?>
+
+
             <!-- New: Section for Recent Orders -->
             <section class="section" aria-label="Recent Orders Section">
                 <h2><i class='bx bxs-history'></i> Recent Orders</h2>
@@ -143,6 +162,10 @@ $recentOrders = $pdo->query("SELECT * FROM orders ORDER BY created_at DESC LIMIT
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('main-content').focus();  // Focus on main content
         });
+        
+        function closePopup() {
+        document.getElementById("stockPopup").style.display = "none";
+        }
     </script>
 </body>
 </html>

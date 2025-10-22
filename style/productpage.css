@@ -1,6 +1,8 @@
-@import url("https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
 
-/* CSS Variables for easy theming */
+/* ==============================
+   ROOT THEME VARIABLES
+============================== */
 :root {
   --bg-primary: #000;
   --bg-secondary: #111;
@@ -20,6 +22,9 @@
   --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* ==============================
+   GLOBAL RESET
+============================== */
 * {
   margin: 0;
   padding: 0;
@@ -35,11 +40,14 @@ body {
   overflow-x: hidden;
 }
 
-/* Product Page Container */
+/* ==============================
+   PRODUCT PAGE LAYOUT
+============================== */
 .product-page {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
+  align-items: flex-start;
   gap: 4rem;
   padding: 140px 2rem 60px 2rem;
   background: linear-gradient(180deg, var(--bg-primary), var(--bg-secondary));
@@ -64,14 +72,15 @@ body {
   z-index: 1;
 }
 
-/* Image Container */
+/* ==============================
+   IMAGE SECTION
+============================== */
 .product-page-image-container {
   flex: 1 1 400px;
   display: flex;
   justify-content: center;
   align-items: center;
   position: relative;
-  overflow: visible; /* Allow scaled image to expand without clipping */
 }
 
 .product-page-image {
@@ -84,19 +93,17 @@ body {
   border: 1px solid var(--border-color);
   transition: var(--transition);
   box-shadow: var(--shadow);
-  max-width: 100%;
-  cursor: zoom-in; /* Indicate interactivity */
+  cursor: zoom-in;
 }
 
 .product-page-image:hover {
-  transform: scale(1.08); /* Increased zoom for more noticeable effect */
-  box-shadow: var(--shadow-hover), 0 0 20px rgba(255, 77, 77, 0.3); /* Added glow for emphasis */
+  transform: scale(1.08);
+  box-shadow: var(--shadow-hover), 0 0 20px rgba(255, 77, 77, 0.3);
   border-color: var(--accent-red);
-  z-index: 2; /* Ensure it layers above other elements */
-  padding: 1rem; /* Slightly reduce padding on hover to accommodate scale */
+  padding: 1rem;
+  z-index: 2;
 }
 
-/* Optional: Add a subtle magnifier lens effect with pseudo-element (CSS-only approximation) */
 .product-page-image::after {
   content: "";
   position: absolute;
@@ -114,7 +121,6 @@ body {
   opacity: 0;
   transition: var(--transition);
   pointer-events: none;
-  z-index: 3;
 }
 
 .product-page-image:hover::after {
@@ -134,12 +140,13 @@ body {
   }
 }
 
-/* Product Info Section */
+/* ==============================
+   PRODUCT INFO
+============================== */
 .product-page-info {
   flex: 1 1 400px;
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
   gap: 1.5rem;
   max-width: 600px;
   padding: 2rem;
@@ -161,8 +168,8 @@ body {
   font-weight: 700;
   margin-bottom: 1rem;
   letter-spacing: -0.02em;
-  position: relative;
   color: var(--text-primary);
+  position: relative;
 }
 
 .product-page-title::after {
@@ -182,9 +189,8 @@ body {
 
 .product-page-description {
   font-size: 1rem;
-  line-height: 1.7;
   color: var(--text-secondary);
-  font-weight: 300;
+  line-height: 1.7;
 }
 
 .product-page-price {
@@ -192,11 +198,12 @@ body {
   color: var(--accent-red);
   font-weight: 700;
   margin: 1rem 0;
-  letter-spacing: -0.01em;
   text-shadow: 0 2px 4px rgba(255, 77, 77, 0.3);
 }
 
-/* Actions (Quantity + Buttons) */
+/* ==============================
+   PRODUCT ACTIONS
+============================== */
 .product-page-actions {
   display: flex;
   flex-direction: column;
@@ -224,7 +231,6 @@ body {
   font-size: 1rem;
   font-weight: 500;
   transition: var(--transition);
-  font-family: inherit;
 }
 
 .product-page-actions input[type="number"]:focus {
@@ -238,20 +244,13 @@ body {
   width: 100%;
   max-width: 200px;
   height: 56px;
-  padding: 0;
-  font-size: 1rem;
-  font-weight: 600;
   border: none;
   border-radius: 12px;
   cursor: pointer;
   transition: var(--transition);
-  letter-spacing: 0.5px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  font-weight: 600;
   text-transform: uppercase;
-  font-size: 0.95rem;
 }
 
 .add-to-cart-btn {
@@ -292,7 +291,109 @@ body {
   box-shadow: 0 6px 16px rgba(0, 170, 255, 0.4);
 }
 
-/* Responsive */
+/* ==============================
+   STOCK + BACK BUTTON
+============================== */
+.product-page-stock {
+  font-size: 14px;
+  margin: 8px 0;
+  color: #28a745;
+}
+
+.product-page-stock.out-of-stock {
+  color: #dc3545;
+  font-weight: bold;
+}
+
+.back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.95rem;
+  padding: 12px 20px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  transition: var(--transition);
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.back-button:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--accent-red);
+  transform: translateX(-4px);
+}
+
+/* ==============================
+   RECOMMENDED & NOTIFICATION SECTION
+============================== */
+.recommended-section,
+.notifications-section {
+  width: 100%;
+  flex-basis: 100%;
+  margin: 60px auto 40px;
+  padding: 20px;
+  max-width: 1100px;
+  background: #1a1a1a;
+  border-radius: 12px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
+  order: 3;
+}
+
+.recommended-section h3,
+.notifications-section h3 {
+  color: #fff;
+  margin-bottom: 20px;
+  font-size: 1.5em;
+  border-left: 4px solid #f33;
+  padding-left: 10px;
+}
+
+.recommended-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+.recommended-card {
+  background: #222;
+  padding: 15px;
+  border-radius: 10px;
+  text-align: center;
+  transition: transform 0.2s ease, background 0.3s;
+}
+
+.recommended-card:hover {
+  transform: translateY(-5px);
+  background: #2b2b2b;
+}
+
+.recommended-card img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.recommended-card h4 {
+  color: #fff;
+  margin-top: 10px;
+  font-size: 1.1em;
+}
+
+.recommended-card p {
+  color: #bbb;
+  margin-top: 5px;
+}
+
+/* ==============================
+   RESPONSIVE
+============================== */
 @media (max-width: 900px) {
   .product-page {
     flex-direction: column;
@@ -304,18 +405,6 @@ body {
   .product-page-info {
     max-width: 100%;
     padding: 1.5rem;
-    margin: 0 10px;
-  }
-
-  .product-page-image {
-    max-width: 90%;
-    padding: 1rem;
-  }
-
-  .product-page-image:hover {
-    transform: scale(
-      1.05
-    ); /* Slightly reduced zoom on mobile to prevent overflow */
   }
 
   .product-page-actions {
@@ -329,6 +418,11 @@ body {
   .buy-now-btn {
     flex: 1;
     min-width: 140px;
+  }
+
+  .back-button {
+    width: 100%;
+    justify-content: center;
   }
 }
 
@@ -346,39 +440,175 @@ body {
   }
 
   .product-page-image-container {
-    overflow: hidden; /* Clip on very small screens if needed */
+    overflow: hidden;
   }
 }
-.back-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--text-secondary);
-  text-decoration: none;
-  font-weight: 500;
-  font-size: 0.95rem;
-  padding: 12px 20px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.05);
+a {
+  color: inherit; /* Match surrounding text color */
+  text-decoration: none; /* Remove underline */
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--accent-red); /* Optional hover color */
+  text-decoration: none; /* Keep underline off */
+}
+/* ⭐ Reviews Section */
+/* Force reviews section to break below main product layout */
+.reviews-section {
+  width: 100%;
+  flex-basis: 100%;
+  order: 2; /* appear before recommendations */
+  margin: 60px auto;
+  max-width: 1000px; /* ✅ keeps it from reaching screen edges */
+  background: rgba(26, 26, 26, 0.8);
+  padding: 30px;
+  border-radius: 16px;
+  color: #fff;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px); /* ✅ glass effect */
   border: 1px solid var(--border-color);
   transition: var(--transition);
-  margin-bottom: 20px;
-  position: relative;
-  z-index: 1;
-  align-self: flex-start;
 }
 
-.back-button:hover {
-  color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.1);
+.reviews-section:hover {
+  box-shadow: var(--shadow-hover);
   border-color: var(--accent-red);
-  transform: translateX(-4px);
 }
 
-@media (max-width: 900px) {
-  .back-button {
-    margin: 0 0 16px 0;
-    justify-content: center;
-    width: 100%;
-  }
+.reviews-section h3 {
+  margin-bottom: 20px;
+  font-size: 1.6rem;
+  border-left: 4px solid var(--accent-red);
+  padding-left: 10px;
+}
+
+.average-rating {
+  font-size: 1.1rem;
+  margin-bottom: 20px;
+  color: var(--text-secondary);
+}
+
+.review-form {
+  margin-bottom: 30px;
+  background: #222;
+  padding: 20px;
+  border-radius: 10px;
+}
+
+.review-list {
+  border-top: 1px solid #333;
+  padding-top: 20px;
+}
+
+.review-item {
+  margin-bottom: 20px;
+  background: #2a2a2a;
+  padding: 15px;
+  border-radius: 8px;
+  transition: var(--transition);
+}
+
+.review-item:hover {
+  transform: translateY(-3px);
+  background: #333;
+}
+
+.star-rating {
+  display: flex;
+  flex-direction: row-reverse;
+  justify-content: flex-end;
+}
+
+.star-rating input {
+  display: none;
+}
+
+.star-rating label {
+  font-size: 24px;
+  color: #444;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.star-rating input:checked ~ label,
+.star-rating label:hover,
+.star-rating label:hover ~ label {
+  color: gold;
+}
+
+.review-form textarea {
+  width: 100%;
+  margin-top: 10px;
+  padding: 8px;
+  border-radius: 5px;
+  border: none;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.submit-review-btn {
+  margin-top: 10px;
+  background: #e63946;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.review-list {
+  border-top: 1px solid #333;
+  padding-top: 20px;
+}
+
+.review-item {
+  margin-bottom: 20px;
+  background: #2a2a2a;
+  padding: 10px;
+  border-radius: 6px;
+}
+
+.review-user {
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.review-rating {
+  color: gold;
+  margin-bottom: 5px;
+}
+
+.review-date {
+  color: #888;
+  font-size: 0.8rem;
+}
+
+/* ⭐ Product Rating Display (under product name) */
+.product-page-rating {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  color: #f5c518; /* gold stars */
+  font-size: 1rem;
+}
+
+.product-page-rating .stars i {
+  font-size: 1.2rem;
+}
+
+.product-page-rating .rating-text {
+  color: #fff;
+  font-weight: 600;
+}
+
+.product-page-rating .review-count {
+  color: #aaa;
+  font-size: 0.9rem;
+}
+
+.product-page-rating.no-reviews {
+  color: #888;
+  font-style: italic;
 }

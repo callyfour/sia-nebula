@@ -163,6 +163,71 @@ $banners = [
 
       <!-- User Menu -->
       <div class="user-menu" id="userMenu">
+        <?php if (isset($_SESSION['user'])): ?>
+          <?php
+            // Fetch unread count
+            $notifStmt = $pdo->prepare("SELECT COUNT(*) FROM notifications WHERE user_id = ? AND seen = 0");
+            $notifStmt->execute([$_SESSION['user']['id']]);
+            $unreadCount = $notifStmt->fetchColumn();
+          ?>
+
+          <div class="notif-container" style="position:relative;margin-right:15px;">
+            <button id="notifBtn" style="background:none;border:none;color:#fff;font-size:1.7rem;cursor:pointer;position:relative;">
+              <i class='bx bx-bell'></i>
+              <?php if ($unreadCount > 0): ?>
+                <span class="notif-count"><?= $unreadCount ?></span>
+              <?php endif; ?>
+            </button>
+
+            <!-- 🔔 Popup Panel -->
+            <div id="notifPopup" class="notif-popup" style="
+              display:none;
+              position:absolute;
+              top:40px;
+              right:0;
+              background:#1a1a1a;
+              border:1px solid #333;
+              border-radius:10px;
+              width:300px;
+              max-height:350px;
+              overflow-y:auto;
+              box-shadow:0 0 20px rgba(0,0,0,0.5);
+              z-index:1000;
+            ">
+              <div id="notifContent" style="padding:10px;color:#fff;font-size:0.9rem;">
+                <p style='color:#aaa;text-align:center;'>Loading...</p>
+              </div>
+            </div>
+          </div>
+
+          <style>
+            .notif-count {
+              position: absolute;
+              top: -5px;
+              right: -8px;
+              background: #ff4d4d;
+              color: white;
+              border-radius: 50%;
+              font-size: 0.7rem;
+              font-weight: bold;
+              padding: 3px 6px;
+            }
+            .notif-item {
+              border-bottom: 1px solid #333;
+              padding: 8px 10px;
+              transition: background 0.3s ease;
+            }
+            .notif-item:hover {
+              background: #222;
+            }
+            .notif-time {
+              font-size: 0.75rem;
+              color: #aaa;
+            }
+          </style>
+        <?php endif; ?>
+
+
         <?php if (isset($_SESSION["user"])): ?>
           <!-- ✅ Logged in -->
           <button class="svg-btn login-btn" type="button" onclick="toggleDropdown()">
@@ -572,6 +637,38 @@ $banners = [
       urlParams.set('page', '1'); // Reset pagination
       window.location.search = urlParams.toString() + '#products-section';
   }
+
+      document.addEventListener('DOMContentLoaded', () => {
+      const notifBtn = document.getElementById('notifBtn');
+      const notifPopup = document.getElementById('notifPopup');
+      const notifContent = document.getElementById('notifContent');
+
+      // Toggle popup visibility
+      notifBtn.addEventListener('click', () => {
+        notifPopup.style.display = notifPopup.style.display === 'block' ? 'none' : 'block';
+        if (notifPopup.style.display === 'block') loadNotifications();
+      });
+
+      // Close popup when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!notifPopup.contains(e.target) && !notifBtn.contains(e.target)) {
+          notifPopup.style.display = 'none';
+        }
+      });
+
+      // Load notifications from backend
+      function loadNotifications() {
+        fetch('load_notifications.php')
+          .then(res => res.text())
+          .then(html => notifContent.innerHTML = html)
+          .catch(() => notifContent.innerHTML = "<p style='color:#aaa;text-align:center;'>Error loading notifications</p>");
+      }
+
+      // Optional: auto-refresh notifications every 30s
+      setInterval(() => {
+        if (notifPopup.style.display === 'block') loadNotifications();
+      }, 30000);
+    });
 
     </script>
 </body>

@@ -95,6 +95,26 @@ $totalPages = ceil($totalOrders / $perPage);
             transform: translateY(-1px);
         }
 
+        .btn-print {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 6px 12px;
+            font-size: 14px;
+            background: var(--accent-blue);
+            color: var(--text-primary);
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-print:hover {
+            background: var(--accent-blue-dark);
+            transform: translateY(-1px);
+        }
+
+
     </style>
 </head>
 <body>
@@ -144,6 +164,9 @@ $totalPages = ceil($totalOrders / $perPage);
                             <td>
                                 <a href="edit_order.php?id=<?= $o['id'] ?>" class="btn-edit">
                                     <i class='bx bxs-edit'></i> Edit
+                                </a>
+                                <a href="print_invoice.php?id=<?= $o['id'] ?>" target="_blank" class="btn-print">
+                                    <i class='bx bxs-printer'></i> Print
                                 </a>
                             </td>
                         </tr>
