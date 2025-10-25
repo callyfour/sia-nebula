@@ -1,6 +1,8 @@
 <?php
 session_start();
 require "../php/db.php";
+require_once "../admin/audit_trail.php";
+
 
 // Regenerate session for security
 if (session_status() === PHP_SESSION_ACTIVE) {
@@ -12,6 +14,13 @@ if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'admin') {
     header("Location: ../php/login.php");
     exit;
 }
+
+// ✅ Record admin dashboard access only once per session
+if (isset($_SESSION['user']) && empty($_SESSION['dashboard_access_logged'])) {
+    recordAudit($pdo, $_SESSION['user']['id'], AUDIT_LOGIN, 'Admin accessed dashboard');
+    $_SESSION['dashboard_access_logged'] = true; // Mark as logged
+}
+
 
 // New: Define a function to fetch counts for reusability
 function fetchCount($pdo, $query) {
@@ -53,13 +62,31 @@ $recentOrders = $pdo->query("SELECT * FROM orders ORDER BY created_at DESC LIMIT
                 <i class='bx bxs-cog'></i> Admin Panel
             </div>
             <nav aria-label="Sidebar Navigation">
-                <a href="admin.php" class="active" aria-current="page"><i class='bx bxs-dashboard'></i> Dashboard</a>
-                <a href="orders.php"><i class='bx bxs-receipt'></i> Orders</a>
-                <a href="products.php"><i class='bx bxs-box'></i> Products</a>
-                <a href="../php/logout.php" onclick="return confirm('Are you sure you want to logout?');"> <!-- Confirmation added -->
+                <a href="admin.php" class="<?= basename($_SERVER['PHP_SELF']) === 'admin.php' ? 'active' : '' ?>">
+                    <i class='bx bxs-dashboard'></i> Dashboard
+                </a>
+                <a href="analytics.php" class="<?= basename($_SERVER['PHP_SELF']) === 'analytics.php' ? 'active' : '' ?>">
+                    <i class='bx bxs-bar-chart-alt-2'></i> Analytics
+                </a>
+                <a href="orders.php" class="<?= basename($_SERVER['PHP_SELF']) === 'orders.php' ? 'active' : '' ?>">
+                    <i class='bx bxs-receipt'></i> Orders
+                </a>
+                <a href="products.php" class="<?= basename($_SERVER['PHP_SELF']) === 'products.php' ? 'active' : '' ?>">
+                    <i class='bx bxs-box'></i> Products
+                </a>
+                <a href="users.php" class="<?= basename($_SERVER['PHP_SELF']) === 'users.php' ? 'active' : '' ?>">
+                    <i class='bx bxs-user'></i> Users
+                </a>
+                <a href="audit_view.php" <?= basename($_SERVER['PHP_SELF']) === 'audit_view.php' ? 'active' : '' ?>">
+                    <i class='bx bx-history'></i> Audit Trail
+                </a>
+
+
+                <a href="../php/logout.php" onclick="return confirm('Are you sure you want to logout?');">
                     <i class='bx bxs-log-out'></i> Logout
                 </a>
             </nav>
+
         </aside>
 
         <!-- Main Content -->

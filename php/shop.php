@@ -224,6 +224,206 @@ $banners = [
               font-size: 0.75rem;
               color: #aaa;
             }
+
+            /* Customer Service Chat Styles */
+            .cs-chat-button {
+              position: fixed;
+              bottom: 30px;
+              right: 30px;
+              width: 60px;
+              height: 60px;
+              background: linear-gradient(135deg, #ff4d4d, #e60000);
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              cursor: pointer;
+              box-shadow: 0 4px 15px rgba(255, 77, 77, 0.4);
+              z-index: 1000;
+              transition: all 0.3s ease;
+            }
+
+            .cs-chat-button:hover {
+              transform: scale(1.1);
+              box-shadow: 0 6px 20px rgba(255, 77, 77, 0.6);
+            }
+
+            .cs-chat-button i {
+              color: white;
+              font-size: 1.8rem;
+            }
+
+            .cs-chat-window {
+              position: fixed;
+              bottom: 100px;
+              right: 30px;
+              width: 380px;
+              height: 500px;
+              background: #1a1a1a;
+              border: 1px solid #333;
+              border-radius: 15px;
+              display: none;
+              flex-direction: column;
+              box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+              z-index: 999;
+              overflow: hidden;
+            }
+
+            .cs-chat-window.active {
+              display: flex;
+            }
+
+            .cs-chat-header {
+              background: linear-gradient(135deg, #ff4d4d, #e60000);
+              padding: 15px 20px;
+              color: white;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+            }
+
+            .cs-chat-header h3 {
+              margin: 0;
+              font-size: 1.1rem;
+              font-weight: 600;
+            }
+
+            .cs-chat-header .close-btn {
+              background: none;
+              border: none;
+              color: white;
+              font-size: 1.5rem;
+              cursor: pointer;
+              padding: 0;
+              line-height: 1;
+            }
+
+            .cs-chat-messages {
+              flex: 1;
+              padding: 20px;
+              overflow-y: auto;
+              background: #0f0f0f;
+            }
+
+            .cs-message {
+              margin-bottom: 15px;
+              display: flex;
+              flex-direction: column;
+            }
+
+            .cs-message.user {
+              align-items: flex-end;
+            }
+
+            .cs-message.agent {
+              align-items: flex-start;
+            }
+
+            .cs-message-bubble {
+              max-width: 75%;
+              padding: 10px 15px;
+              border-radius: 15px;
+              word-wrap: break-word;
+            }
+
+            .cs-message.user .cs-message-bubble {
+              background: #ff4d4d;
+              color: white;
+              border-bottom-right-radius: 5px;
+            }
+
+            .cs-message.agent .cs-message-bubble {
+              background: #222;
+              color: #fff;
+              border-bottom-left-radius: 5px;
+            }
+
+            .cs-message-time {
+              font-size: 0.7rem;
+              color: #777;
+              margin-top: 5px;
+            }
+
+            .cs-chat-input-area {
+              padding: 15px;
+              background: #1a1a1a;
+              border-top: 1px solid #333;
+              display: flex;
+              gap: 10px;
+            }
+
+            .cs-chat-input {
+              flex: 1;
+              background: #0f0f0f;
+              border: 1px solid #333;
+              border-radius: 20px;
+              padding: 10px 15px;
+              color: white;
+              font-size: 0.9rem;
+              outline: none;
+              transition: border-color 0.3s ease;
+            }
+
+            .cs-chat-input:focus {
+              border-color: #ff4d4d;
+            }
+
+            .cs-send-btn {
+              background: #ff4d4d;
+              border: none;
+              border-radius: 50%;
+              width: 40px;
+              height: 40px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              cursor: pointer;
+              transition: background 0.3s ease;
+            }
+
+            .cs-send-btn:hover {
+              background: #e60000;
+            }
+
+            .cs-send-btn i {
+              color: white;
+              font-size: 1.2rem;
+            }
+
+            .cs-quick-replies {
+              padding: 10px 20px;
+              background: #1a1a1a;
+              border-top: 1px solid #333;
+              display: flex;
+              flex-wrap: wrap;
+              gap: 8px;
+            }
+
+            .cs-quick-reply-btn {
+              background: #222;
+              border: 1px solid #333;
+              border-radius: 15px;
+              padding: 6px 12px;
+              color: #ccc;
+              font-size: 0.8rem;
+              cursor: pointer;
+              transition: all 0.3s ease;
+            }
+
+            .cs-quick-reply-btn:hover {
+              background: #ff4d4d;
+              color: white;
+              border-color: #ff4d4d;
+            }
+
+            @media (max-width: 768px) {
+              .cs-chat-window {
+                width: calc(100% - 20px);
+                height: calc(100% - 120px);
+                right: 10px;
+                bottom: 90px;
+              }
+            }
           </style>
         <?php endif; ?>
 
@@ -545,7 +745,40 @@ $banners = [
         </div>
       <?php endif; ?>
     </section>
+            <!-- ✅ Customer Service Chat Widget -->
+            <div class="cs-chat-button" id="csChatButton" onclick="toggleChat()">
+              <i class='bx bx-message-dots'></i>
+            </div>
 
+            <div class="cs-chat-window" id="csChatWindow">
+              <div class="cs-chat-header">
+                <h3>Customer Support</h3>
+                <button class="close-btn" onclick="toggleChat()">&times;</button>
+              </div>
+
+              <div class="cs-chat-messages" id="csChatMessages">
+                <div class="cs-message agent">
+                  <div class="cs-message-bubble">
+                    Hello! Welcome to our customer service. How can we help you today?
+                  </div>
+                  <div class="cs-message-time"><?= date('h:i A') ?></div>
+                </div>
+              </div>
+
+              <div class="cs-quick-replies">
+                <button class="cs-quick-reply-btn" onclick="sendQuickReply('Track my order')">Track Order</button>
+                <button class="cs-quick-reply-btn" onclick="sendQuickReply('Product inquiry')">Product Info</button>
+                <button class="cs-quick-reply-btn" onclick="sendQuickReply('Shipping info')">Shipping</button>
+                <button class="cs-quick-reply-btn" onclick="sendQuickReply('Return/Refund')">Returns</button>
+              </div>
+
+              <div class="cs-chat-input-area">
+                <input type="text" class="cs-chat-input" id="csChatInput" placeholder="Type your message..." onkeypress="if(event.key === 'Enter'){ sendMessage(); }">
+                <button class="cs-send-btn" onclick="sendMessage()">
+                  <i class='bx bx-send'></i>
+                </button>
+              </div>
+            </div>
     <!-- ✅ Carousel Script -->
     <script>
       let slideIndex = 0;
@@ -669,6 +902,73 @@ $banners = [
         if (notifPopup.style.display === 'block') loadNotifications();
       }, 30000);
     });
+
+    // ✅ Customer Service Chat Functions
+    function toggleChat() {
+      const chatWindow = document.getElementById('csChatWindow');
+      chatWindow.classList.toggle('active');
+    }
+
+    function sendMessage() {
+      const input = document.getElementById('csChatInput');
+      const message = input.value.trim();
+      
+      if (message === '') return;
+
+      addMessage(message, 'user');
+      input.value = '';
+
+      setTimeout(() => {
+        const response = getAutomatedResponse(message);
+        addMessage(response, 'agent');
+      }, 1000);
+    }
+
+    function sendQuickReply(message) {
+      addMessage(message, 'user');
+      
+      setTimeout(() => {
+        const response = getAutomatedResponse(message);
+        addMessage(response, 'agent');
+      }, 1000);
+    }
+
+    function addMessage(text, sender) {
+      const messagesContainer = document.getElementById('csChatMessages');
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `cs-message ${sender}`;
+      
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+      
+      messageDiv.innerHTML = `
+        <div class="cs-message-bubble">${text}</div>
+        <div class="cs-message-time">${timeStr}</div>
+      `;
+      
+      messagesContainer.appendChild(messageDiv);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function getAutomatedResponse(message) {
+      const lowerMsg = message.toLowerCase();
+      
+      if (lowerMsg.includes('track') || lowerMsg.includes('order')) {
+        return 'To track your order, please go to your profile page and check the "My Orders" section. You can also contact us with your order number for assistance.';
+      } else if (lowerMsg.includes('product') || lowerMsg.includes('info')) {
+        return 'For product information, you can click on any product card to see detailed specifications, pricing, and availability. Need help with a specific product?';
+      } else if (lowerMsg.includes('ship')) {
+        return 'We offer nationwide shipping! Standard delivery takes 3-7 business days. Express shipping is also available. Shipping costs are calculated at checkout based on your location.';
+      } else if (lowerMsg.includes('return') || lowerMsg.includes('refund')) {
+        return 'We have a 7-day return policy for unused items in original packaging. Please contact us through our Contact Us page to initiate a return.';
+      } else if (lowerMsg.includes('payment')) {
+        return 'We accept various payment methods including credit/debit cards, bank transfers, and cash on delivery. All transactions are secure and encrypted.';
+      } else if (lowerMsg.includes('stock') || lowerMsg.includes('available')) {
+        return 'Product availability is shown on each product page. If an item shows "Out of Stock", you can add it to your wishlist to be notified when it\'s back in stock.';
+      } else {
+        return 'Thank you for your message! For more specific assistance, please visit our Contact Us page or call our customer service hotline. Our team will be happy to help you!';
+      }
+    }
 
     </script>
 </body>

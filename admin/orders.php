@@ -124,9 +124,14 @@ $totalPages = ceil($totalOrders / $perPage);
             <i class='bx bxs-cog'></i> Admin Panel
         </div>
         <nav>
-            <a href="admin.php"><i class='bx bxs-dashboard'></i> Dashboard</a>
-            <a href="orders.php" class="active"><i class='bx bxs-receipt'></i> Orders</a>
+            <a href="admin.php" ><i class='bx bxs-dashboard'></i> Dashboard</a>
+            <a href="analytics.php"><i class='bx bxs-bar-chart-alt-2'></i> Analytics</a>
+            <a href="orders.php" class="active" aria-current="page"><i class='bx bxs-receipt'></i> Orders</a>
             <a href="products.php"><i class='bx bxs-box'></i> Products</a>
+            <a href="users.php"><i class='bx bxs-user'></i> Users</a>
+            <a href="audit_view.php" <?= basename($_SERVER['PHP_SELF']) === 'audit_view.php' ? 'active' : '' ?>">
+                    <i class='bx bx-history'></i> Audit Trail
+                </a>
             <a href="../php/logout.php"><i class='bx bxs-log-out'></i> Logout</a>
         </nav>
     </aside>

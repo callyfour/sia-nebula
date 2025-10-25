@@ -1,6 +1,8 @@
 <?php
 session_start();
 require "../php/db.php";
+require_once "../admin/audit_trail.php";
+
 
 // ✅ Only admin access
 if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'admin') {
@@ -57,6 +59,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Update order total in DB
         $stmt = $pdo->prepare("UPDATE orders SET user_id=?, total_amount=?, status=?, shipping_address=? WHERE id=?");
         $stmt->execute([$user_id, $total, $status, $shipping_address, $id]);
+
+        // ✅ Record audit trail
+        recordAudit(
+            $pdo,
+            $_SESSION['user']['id'],
+            'UPDATE',
+            "Updated Order #$id — Status: $status, Total: ₱" . number_format($total, 2)
+        );
+
+
+        // Redirect to orders.php with a success message
+        header("Location: orders.php?msg=Order+updated+successfully");
+        exit;
+
 
         // Redirect to orders.php with a success message
         header("Location: orders.php?msg=Order+updated+successfully");
